@@ -109,6 +109,7 @@ const Plants = ({ onLogout }) => {
       const response = await axios.post(`${API}/plants/diagnose`, {
         plant_id: selectedPlant.id,
         image_base64: compressedBase64,
+        language: language,
       });
       setDiagnosis(response.data);
       toast.success('Diagnostic terminé !');
