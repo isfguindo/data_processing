@@ -367,7 +367,7 @@ async def diagnose_plant(plant_id: str, image_base64: str, current_user: Dict = 
     image_content = ImageContent(image_base64=image_base64)
     
     message = UserMessage(
-        text="Analyze this plant image. Provide: 1) Overall health status, 2) Any visible diseases or pests, 3) Nutritional deficiencies, 4) Specific treatment recommendations with product names if applicable, 5) Preventive measures. Be detailed and practical.",
+        text="Analyze this plant image quickly. Provide: 1) Health status (1-2 sentences), 2) Visible diseases/pests if any, 3) Nutrient issues if any, 4) 2-3 specific treatment recommendations, 5) 1-2 preventive tips. Be concise but practical.",
         file_contents=[image_content]
     )
     
