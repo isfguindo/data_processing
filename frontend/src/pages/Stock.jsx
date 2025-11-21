@@ -145,24 +145,34 @@ const Stock = ({ onLogout }) => {
                     <tr key={item.id} data-testid={`stock-row-${item.id}`}>
                       <td>{item.item_name}</td>
                       <td>{getCategoryLabel(item.category)}</td>
-                      <td data-testid={`stock-quantity-${item.id}`}>{item.quantity}</td>
+                      <td data-testid={`stock-quantity-${item.id}`}>{item.quantity.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
                       <td>{item.unit}</td>
-                      <td>{item.min_threshold}</td>
-                      <td>${item.price_per_unit}</td>
+                      <td>{item.min_threshold.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+                      <td>{getCurrencySymbol(item.currency || 'USD')}{item.price_per_unit.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                       <td>
                         <span className={`badge ${item.quantity <= item.min_threshold ? 'badge-danger' : 'badge-success'}`}>
                           {item.quantity <= item.min_threshold ? 'Stock Faible' : 'Disponible'}
                         </span>
                       </td>
                       <td>
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDelete(item.id)}
-                          data-testid={`delete-stock-${item.id}`}
-                          style={{ fontSize: '0.875rem', padding: '0.5rem' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => openEditModal(item)}
+                            data-testid={`edit-stock-${item.id}`}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem' }}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => handleDelete(item.id)}
+                            data-testid={`delete-stock-${item.id}`}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem' }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
