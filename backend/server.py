@@ -110,6 +110,7 @@ class PlantDiagnosis(BaseModel):
 class PlantDiagnosisRequest(BaseModel):
     plant_id: str
     image_base64: str
+    language: str = "fr"  # Default to French
 
 class Stock(BaseModel):
     model_config = ConfigDict(extra="ignore")
