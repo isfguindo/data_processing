@@ -241,6 +241,8 @@ const Dashboard = ({ onLogout }) => {
   );
 };
 
+const COLORS = ['#2e7d32', '#66bb6a', '#81c784', '#a5d6a7', '#c8e6c9', '#4caf50'];
+
 const getSensorLabel = (type) => {
   const labels = {
     humidity: 'Humidité du Sol',
@@ -251,6 +253,17 @@ const getSensorLabel = (type) => {
     sunlight: 'Ensoleillement',
   };
   return labels[type] || type;
+};
+
+const getCategoryLabel = (category) => {
+  const labels = {
+    seeds: 'Graines',
+    fertilizers: 'Fertilisants',
+    pesticides: 'Pesticides',
+    harvested_products: 'Produits',
+    tools: 'Outils',
+  };
+  return labels[category] || category;
 };
 
 export default Dashboard;
