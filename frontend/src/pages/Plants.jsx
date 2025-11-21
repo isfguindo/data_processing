@@ -9,6 +9,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getTranslation } from '../locales';
 
 const Plants = ({ onLogout }) => {
+  const { language } = useLanguage();
+  const t = (key) => getTranslation(language, key);
   const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
