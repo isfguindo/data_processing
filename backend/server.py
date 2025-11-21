@@ -437,7 +437,7 @@ async def get_sales(current_user: Dict = Depends(get_current_user)):
 async def create_sale(sale: Sale, current_user: Dict = Depends(get_current_user)):
     sale_dict = sale.model_dump()
     sale_dict['sale_date'] = sale_dict['sale_date'].isoformat()
-    await db.sales.insert_one(sale_dict)
+    result = await db.sales.insert_one(sale_dict)
     
     # Update customer total purchases
     await db.customers.update_one(
@@ -445,6 +445,7 @@ async def create_sale(sale: Sale, current_user: Dict = Depends(get_current_user)
         {"$inc": {"total_purchases": sale.total_amount}}
     )
     
+    sale_dict.pop('_id', None)
     return sale_dict
 
 @api_router.get("/sales/forecast")
