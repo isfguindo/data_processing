@@ -383,7 +383,7 @@ async def diagnose_plant(plant_id: str, image_base64: str, current_user: Dict = 
     
     diagnosis_dict = diagnosis.model_dump()
     diagnosis_dict['created_at'] = diagnosis_dict['created_at'].isoformat()
-    await db.plant_diagnoses.insert_one(diagnosis_dict)
+    result = await db.plant_diagnoses.insert_one(diagnosis_dict)
     
     # Update plant status
     await db.plants.update_one(
@@ -391,6 +391,7 @@ async def diagnose_plant(plant_id: str, image_base64: str, current_user: Dict = 
         {"$set": {"last_inspection": datetime.now(timezone.utc).isoformat()}}
     )
     
+    diagnosis_dict.pop('_id', None)
     return diagnosis_dict
 
 @api_router.get("/plants/{plant_id}/diagnoses")
