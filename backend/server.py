@@ -345,7 +345,8 @@ async def create_plant(plant: Plant, current_user: Dict = Depends(get_current_us
     plant_dict['created_at'] = plant_dict['created_at'].isoformat()
     if plant_dict.get('last_inspection'):
         plant_dict['last_inspection'] = plant_dict['last_inspection'].isoformat()
-    await db.plants.insert_one(plant_dict)
+    result = await db.plants.insert_one(plant_dict)
+    plant_dict.pop('_id', None)
     return plant_dict
 
 @api_router.post("/plants/diagnose")
