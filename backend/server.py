@@ -183,6 +183,29 @@ class Report(BaseModel):
     data: Dict[str, Any]
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class AutoIrrigationSettings(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    enabled: bool = False
+    temperature_threshold: float = 30.0  # °C
+    humidity_threshold: float = 40.0  # %
+    recommended_temp_threshold: Optional[float] = None
+    recommended_humidity_threshold: Optional[float] = None
+    last_triggered: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AutoIrrigationTrigger(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    triggered_by: str  # "auto" or "manual"
+    temperature: float
+    humidity: float
+    zones_irrigated: List[str]
+    total_water_used: float
+    ai_recommendation: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class AIRecommendation(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
