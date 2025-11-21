@@ -68,11 +68,12 @@ const Sales = ({ onLogout }) => {
   const getForecast = async () => {
     setLoadingForecast(true);
     try {
-      const response = await axios.get(`${API}/sales/forecast`);
+      const response = await axios.post(`${API}/sales/forecast`, { language: 'fr' });
       setForecast(response.data.forecast);
       toast.success('Prévision générée !');
     } catch (error) {
       toast.error('Erreur lors de la génération de la prévision');
+      console.error('Forecast error:', error);
     } finally {
       setLoadingForecast(false);
     }
