@@ -107,6 +107,10 @@ class PlantDiagnosis(BaseModel):
     image_base64: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class PlantDiagnosisRequest(BaseModel):
+    plant_id: str
+    image_base64: str
+
 class Stock(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
