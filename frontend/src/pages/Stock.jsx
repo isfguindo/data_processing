@@ -9,6 +9,8 @@ const Stock = ({ onLogout }) => {
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
   const [newItem, setNewItem] = useState({
     item_name: '',
     category: 'seeds',
@@ -16,6 +18,7 @@ const Stock = ({ onLogout }) => {
     unit: '',
     min_threshold: '',
     price_per_unit: '',
+    currency: 'USD',
   });
 
   useEffect(() => {
