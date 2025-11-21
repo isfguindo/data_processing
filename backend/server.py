@@ -483,7 +483,8 @@ async def get_customers(current_user: Dict = Depends(get_current_user)):
 async def create_customer(customer: Customer, current_user: Dict = Depends(get_current_user)):
     customer_dict = customer.model_dump()
     customer_dict['created_at'] = customer_dict['created_at'].isoformat()
-    await db.customers.insert_one(customer_dict)
+    result = await db.customers.insert_one(customer_dict)
+    customer_dict.pop('_id', None)
     return customer_dict
 
 @api_router.put("/customers/{customer_id}")
