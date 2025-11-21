@@ -85,7 +85,7 @@ const Sidebar = ({ onLogout }) => {
                 cursor: 'pointer',
                 transition: 'all 0.3s ease'
               }}
-              data-testid=\"lang-en-button\"
+              data-testid="lang-en-button"
             >
               EN
             </button>
