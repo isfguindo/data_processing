@@ -354,7 +354,9 @@ async def create_plant(plant: Plant, current_user: Dict = Depends(get_current_us
     return plant_dict
 
 @api_router.post("/plants/diagnose")
-async def diagnose_plant(plant_id: str, image_base64: str, current_user: Dict = Depends(get_current_user)):
+async def diagnose_plant(request: PlantDiagnosisRequest, current_user: Dict = Depends(get_current_user)):
+    plant_id = request.plant_id
+    image_base64 = request.image_base64
     # Get user settings for AI provider
     settings = await db.settings.find_one({"user_id": current_user['user_id']}, {"_id": 0})
     provider = settings.get('ai_provider', 'openai') if settings else 'openai'
