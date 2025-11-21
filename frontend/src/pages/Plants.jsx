@@ -5,6 +5,8 @@ import Sidebar from '../components/Sidebar';
 import { Sprout, Plus, Upload, Camera, Eye, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getTranslation } from '../locales';
 
 const Plants = ({ onLogout }) => {
   const [plants, setPlants] = useState([]);
