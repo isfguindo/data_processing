@@ -316,6 +316,19 @@ const getCategoryLabel = (category) => {
   return labels[category] || category;
 };
 
+const getCurrencySymbol = (currency) => {
+  const symbols = {
+    USD: '$',
+    EUR: '€',
+    XAF: 'FCFA ',
+    GBP: '£',
+    MAD: 'DH ',
+    CAD: 'C$',
+    CHF: 'CHF ',
+  };
+  return symbols[currency] || currency + ' ';
+};
+
 const modalStyles = {
   overlay: {
     position: 'fixed',
