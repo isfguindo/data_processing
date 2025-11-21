@@ -50,28 +50,69 @@ const Plants = ({ onLogout }) => {
     }
   };
 
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Redimensionner l'image (max 800px de largeur)
+          const maxWidth = 800;
+          const maxHeight = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compresser en JPEG qualité 80%
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+          resolve(compressedBase64);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const onDrop = async (acceptedFiles) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result.split(',')[1];
-      setDiagnosing(true);
-      try {
-        const response = await axios.post(`${API}/plants/diagnose`, {
-          plant_id: selectedPlant.id,
-          image_base64: base64,
-        });
-        setDiagnosis(response.data);
-        toast.success('Diagnostic terminé !');
-      } catch (error) {
-        toast.error('Erreur lors du diagnostic');
-      } finally {
-        setDiagnosing(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    setDiagnosing(true);
+    try {
+      // Compresser l'image avant l'envoi
+      const compressedBase64 = await compressImage(file);
+      
+      const response = await axios.post(`${API}/plants/diagnose`, {
+        plant_id: selectedPlant.id,
+        image_base64: compressedBase64,
+      });
+      setDiagnosis(response.data);
+      toast.success('Diagnostic terminé !');
+    } catch (error) {
+      toast.error('Erreur lors du diagnostic');
+    } finally {
+      setDiagnosing(false);
+    }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
