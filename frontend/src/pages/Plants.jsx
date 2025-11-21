@@ -268,9 +268,14 @@ const Plants = ({ onLogout }) => {
                   <div {...getRootProps()} style={dropzoneStyles.container}>
                     <input {...getInputProps()} data-testid="image-upload-input" />
                     {diagnosing ? (
-                      <div>
-                        <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
-                        <p>Analyse en cours...</p>
+                      <div style={{ textAlign: 'center', padding: '2rem' }}>
+                        <div className="spinner" style={{ margin: '0 auto 1.5rem' }}></div>
+                        <p style={{ fontSize: '1.125rem', fontWeight: 600, color: '#2e7d32', marginBottom: '0.5rem' }}>
+                          Analyse IA en cours...
+                        </p>
+                        <p style={{ fontSize: '0.875rem', color: '#66bb6a' }}>
+                          L'IA analyse l'image de votre plante. Cela peut prendre 10-30 secondes.
+                        </p>
                       </div>
                     ) : (
                       <div>
