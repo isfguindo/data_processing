@@ -327,6 +327,73 @@ const Irrigation = ({ onLogout }) => {
           )}
         </div>
 
+        {/* Auto Settings Modal */}
+        {showAutoSettings && autoSettings && (
+          <div style={modalStyles.overlay} onClick={() => setShowAutoSettings(false)}>
+            <div style={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
+              <h2 style={modalStyles.title}>Configuration des Seuils Automatiques</h2>
+              <p style={{ color: '#66bb6a', marginBottom: '1.5rem' }}>
+                Ajustez les seuils pour déclencher l'irrigation automatique. L'IA a recommandé des valeurs optimales.
+              </p>
+              
+              <div className="form-group">
+                <label>Seuil de Température (°C)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-input"
+                  value={autoSettings.temperature_threshold}
+                  onChange={(e) => setAutoSettings({ ...autoSettings, temperature_threshold: parseFloat(e.target.value) })}
+                  data-testid="temp-threshold-input"
+                />
+                {autoSettings.recommended_temp_threshold && (
+                  <p style={{ fontSize: '0.875rem', color: '#81c784', marginTop: '0.5rem' }}>
+                    💡 IA recommande: {autoSettings.recommended_temp_threshold}°C
+                  </p>
+                )}
+                <p style={{ fontSize: '0.875rem', color: '#66bb6a', marginTop: '0.5rem' }}>
+                  L'irrigation se déclenchera si la température dépasse ce seuil
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label>Seuil d'Humidité (%)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  className="form-input"
+                  value={autoSettings.humidity_threshold}
+                  onChange={(e) => setAutoSettings({ ...autoSettings, humidity_threshold: parseFloat(e.target.value) })}
+                  data-testid="humidity-threshold-input"
+                />
+                {autoSettings.recommended_humidity_threshold && (
+                  <p style={{ fontSize: '0.875rem', color: '#81c784', marginTop: '0.5rem' }}>
+                    💡 IA recommande: {autoSettings.recommended_humidity_threshold}%
+                  </p>
+                )}
+                <p style={{ fontSize: '0.875rem', color: '#66bb6a', marginTop: '0.5rem' }}>
+                  L'irrigation se déclenchera si l'humidité descend sous ce seuil
+                </p>
+              </div>
+
+              <div style={{ background: 'rgba(66, 165, 245, 0.05)', padding: '1rem', borderRadius: '12px', marginTop: '1rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#0288d1', margin: 0 }}>
+                  <strong>Note:</strong> L'IA analysera vos plantes (type, état, croissance) et recommandera automatiquement la quantité d'eau optimale pour chaque zone lors du déclenchement.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                <button type="button" className="btn btn-primary" onClick={handleSaveAutoSettings} data-testid="save-auto-settings">
+                  Sauvegarder
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAutoSettings(false)}>
+                  Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showModal && (
           <div style={modalStyles.overlay} onClick={() => setShowModal(false)}>
             <div style={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
