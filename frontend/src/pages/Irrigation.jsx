@@ -60,10 +60,12 @@ const Irrigation = ({ onLogout }) => {
 
   const handleToggleAutoIrrigation = async () => {
     try {
-      const newSettings = { ...autoSettings, enabled: !autoSettings.enabled };
-      await axios.put(`${API}/irrigation/auto-settings`, newSettings);
-      setAutoSettings(newSettings);
-      toast.success(newSettings.enabled ? 'Irrigation automatique activée !' : 'Irrigation automatique désactivée');
+      const newEnabled = !autoSettings.enabled;
+      const response = await axios.put(`${API}/irrigation/auto-settings`, {
+        enabled: newEnabled
+      });
+      setAutoSettings(response.data);
+      toast.success(newEnabled ? 'Irrigation automatique activée !' : 'Irrigation automatique désactivée');
     } catch (error) {
       toast.error('Erreur lors de la mise à jour');
     }
@@ -71,11 +73,17 @@ const Irrigation = ({ onLogout }) => {
 
   const handleSaveAutoSettings = async () => {
     try {
-      await axios.put(`${API}/irrigation/auto-settings`, autoSettings);
+      const response = await axios.put(`${API}/irrigation/auto-settings`, {
+        temperature_threshold: autoSettings.temperature_threshold,
+        humidity_threshold: autoSettings.humidity_threshold
+      });
+      setAutoSettings(response.data);
       toast.success('Paramètres sauvegardés !');
       setShowAutoSettings(false);
+      fetchAutoSettings(); // Refresh to get latest data
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
+      console.error('Error saving settings:', error);
     }
   };
 
