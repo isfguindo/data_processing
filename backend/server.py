@@ -195,6 +195,11 @@ class AutoIrrigationSettings(BaseModel):
     last_triggered: Optional[datetime] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class AutoIrrigationSettingsUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    temperature_threshold: Optional[float] = None
+    humidity_threshold: Optional[float] = None
+
 class AutoIrrigationTrigger(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
