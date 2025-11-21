@@ -1,0 +1,326 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API } from '../App';
+import Sidebar from '../components/Sidebar';
+import { Sprout, Plus, Upload, Camera, Eye, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { useDropzone } from 'react-dropzone';
+
+const Plants = ({ onLogout }) => {
+  const [plants, setPlants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDiagnoseModal, setShowDiagnoseModal] = useState(false);
+  const [selectedPlant, setSelectedPlant] = useState(null);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [diagnosis, setDiagnosis] = useState(null);
+  const [newPlant, setNewPlant] = useState({
+    name: '',
+    plant_type: '',
+    location: '',
+    planting_date: '',
+    status: 'healthy',
+  });
+
+  useEffect(() => {
+    fetchPlants();
+  }, []);
+
+  const fetchPlants = async () => {
+    try {
+      const response = await axios.get(`${API}/plants`);
+      setPlants(response.data);
+    } catch (error) {
+      toast.error('Erreur lors du chargement des plantes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddPlant = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/plants`, newPlant);
+      toast.success('Plante ajoutée avec succès !');
+      setShowAddModal(false);
+      setNewPlant({ name: '', plant_type: '', location: '', planting_date: '', status: 'healthy' });
+      fetchPlants();
+    } catch (error) {
+      toast.error('Erreur lors de l\'ajout de la plante');
+    }
+  };
+
+  const onDrop = async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result.split(',')[1];
+      setDiagnosing(true);
+      try {
+        const response = await axios.post(`${API}/plants/diagnose`, {
+          plant_id: selectedPlant.id,
+          image_base64: base64,
+        });
+        setDiagnosis(response.data);
+        toast.success('Diagnostic terminé !');
+      } catch (error) {
+        toast.error('Erreur lors du diagnostic');
+      } finally {
+        setDiagnosing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp'] },
+    multiple: false,
+  });
+
+  return (
+    <div className="app-container">
+      <Sidebar onLogout={onLogout} />
+      <div className="main-content">
+        <div className="page-header">
+          <h1 data-testid="plants-title">Gestion des Plantes</h1>
+          <p>Surveillez et diagnostiquez vos cultures avec l'IA</p>
+        </div>
+
+        <div style={{ marginBottom: '2rem' }}>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => setShowAddModal(true)}
+            data-testid="add-plant-button"
+          >
+            <Plus size={20} />
+            Ajouter une Plante
+          </button>
+        </div>
+
+        <div className="content-card">
+          <h2>Liste des Plantes</h2>
+          {loading ? (
+            <div className="loading-screen"><div className="spinner"></div></div>
+          ) : plants.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#66bb6a', padding: '2rem' }}>Aucune plante enregistrée</p>
+          ) : (
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Type</th>
+                    <th>Localisation</th>
+                    <th>Date de Plantation</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {plants.map((plant) => (
+                    <tr key={plant.id} data-testid={`plant-row-${plant.id}`}>
+                      <td>{plant.name}</td>
+                      <td>{plant.plant_type}</td>
+                      <td>{plant.location}</td>
+                      <td>{plant.planting_date}</td>
+                      <td>
+                        <span className={`badge ${plant.status === 'healthy' ? 'badge-success' : 'badge-warning'}`}>
+                          {plant.status === 'healthy' ? 'Saine' : plant.status === 'sick' ? 'Malade' : 'Traitée'}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => {
+                            setSelectedPlant(plant);
+                            setShowDiagnoseModal(true);
+                            setDiagnosis(null);
+                          }}
+                          data-testid={`diagnose-button-${plant.id}`}
+                          style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                        >
+                          <Camera size={16} />
+                          Diagnostiquer
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Add Plant Modal */}
+        {showAddModal && (
+          <div style={modalStyles.overlay} onClick={() => setShowAddModal(false)}>
+            <div style={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
+              <h2 style={modalStyles.title}>Ajouter une Plante</h2>
+              <form onSubmit={handleAddPlant}>
+                <div className="form-group">
+                  <label>Nom</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newPlant.name}
+                    onChange={(e) => setNewPlant({ ...newPlant, name: e.target.value })}
+                    required
+                    data-testid="plant-name-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Type</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newPlant.plant_type}
+                    onChange={(e) => setNewPlant({ ...newPlant, plant_type: e.target.value })}
+                    required
+                    data-testid="plant-type-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Localisation</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newPlant.location}
+                    onChange={(e) => setNewPlant({ ...newPlant, location: e.target.value })}
+                    required
+                    data-testid="plant-location-input"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Date de Plantation</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={newPlant.planting_date}
+                    onChange={(e) => setNewPlant({ ...newPlant, planting_date: e.target.value })}
+                    required
+                    data-testid="plant-date-input"
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className="btn btn-primary" data-testid="submit-plant-button">
+                    Ajouter
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Diagnose Modal */}
+        {showDiagnoseModal && (
+          <div style={modalStyles.overlay} onClick={() => setShowDiagnoseModal(false)}>
+            <div style={{...modalStyles.modal, maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
+              <h2 style={modalStyles.title}>Diagnostic IA - {selectedPlant?.name}</h2>
+              {!diagnosis ? (
+                <div>
+                  <div {...getRootProps()} style={dropzoneStyles.container}>
+                    <input {...getInputProps()} data-testid="image-upload-input" />
+                    {diagnosing ? (
+                      <div>
+                        <div className="spinner" style={{ margin: '0 auto 1rem' }}></div>
+                        <p>Analyse en cours...</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload size={48} color="#66bb6a" style={{ marginBottom: '1rem' }} />
+                        <p>{isDragActive ? 'Déposez l\'image ici' : 'Glissez une image ou cliquez pour sélectionner'}</p>
+                        <p style={{ fontSize: '0.875rem', color: '#81c784', marginTop: '0.5rem' }}>
+                          Formats acceptés: JPG, PNG, WEBP
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setShowDiagnoseModal(false)}
+                    style={{ marginTop: '1rem', width: '100%' }}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ background: 'rgba(46, 125, 50, 0.05)', padding: '1.5rem', borderRadius: '12px', marginBottom: '1rem' }}>
+                    <h3 style={{ marginBottom: '1rem', color: '#1b5e20' }}>Résultat du Diagnostic</h3>
+                    <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#2e7d32' }} data-testid="diagnosis-result">
+                      {diagnosis.diagnosis}
+                    </p>
+                  </div>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      setShowDiagnoseModal(false);
+                      setDiagnosis(null);
+                    }}
+                    style={{ width: '100%' }}
+                    data-testid="close-diagnosis-button"
+                  >
+                    Fermer
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const modalStyles = {
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)',
+  },
+  modal: {
+    background: 'white',
+    borderRadius: '20px',
+    padding: '2rem',
+    maxWidth: '500px',
+    width: '90%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+  },
+  title: {
+    fontFamily: '"Space Grotesk", sans-serif',
+    fontSize: '1.75rem',
+    fontWeight: 700,
+    color: '#1b5e20',
+    marginBottom: '1.5rem',
+  },
+};
+
+const dropzoneStyles = {
+  container: {
+    border: '2px dashed rgba(46, 125, 50, 0.3)',
+    borderRadius: '12px',
+    padding: '3rem 2rem',
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    background: 'rgba(46, 125, 50, 0.02)',
+  },
+};
+
+export default Plants;
