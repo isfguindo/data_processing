@@ -530,7 +530,8 @@ async def get_tasks(current_user: Dict = Depends(get_current_user)):
 async def create_task(task: Task, current_user: Dict = Depends(get_current_user)):
     task_dict = task.model_dump()
     task_dict['created_at'] = task_dict['created_at'].isoformat()
-    await db.tasks.insert_one(task_dict)
+    result = await db.tasks.insert_one(task_dict)
+    task_dict.pop('_id', None)
     return task_dict
 
 @api_router.put("/tasks/{task_id}")
