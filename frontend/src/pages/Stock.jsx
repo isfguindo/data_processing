@@ -183,10 +183,15 @@ const Stock = ({ onLogout }) => {
         </div>
 
         {showModal && (
-          <div style={modalStyles.overlay} onClick={() => setShowModal(false)}>
+          <div style={modalStyles.overlay} onClick={() => {
+            setShowModal(false);
+            setIsEditing(false);
+            setEditingItemId(null);
+            setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
+          }}>
             <div style={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
-              <h2 style={modalStyles.title}>Ajouter un Article au Stock</h2>
-              <form onSubmit={handleAddItem}>
+              <h2 style={modalStyles.title}>{isEditing ? 'Modifier l\'Article' : 'Ajouter un Article au Stock'}</h2>
+              <form onSubmit={isEditing ? handleEditItem : handleAddItem}>
                 <div className="form-group">
                   <label>Nom de l'article</label>
                   <input
