@@ -611,7 +611,7 @@ async def get_ai_recommendations(current_user: Dict = Depends(get_current_user))
     return recommendations
 
 @api_router.post("/ai/generate-recommendations")
-async def generate_recommendations(current_user: Dict = Depends(get_current_user)):
+async def generate_recommendations(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
     # Get various data
     sensors = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(6).to_list(6)
     stock = await db.stock.find({"$expr": {"$lte": ["$quantity", "$min_threshold"]}}, {"_id": 0}).to_list(10)
@@ -619,14 +619,16 @@ async def generate_recommendations(current_user: Dict = Depends(get_current_user
     sensor_summary = ", ".join([f"{s['sensor_type']}: {s['value']}{s['unit']}" for s in sensors])
     low_stock_summary = ", ".join([f"{s['item_name']} ({s['quantity']}{s['unit']})" for s in stock[:5]])
     
+    language_name = "French" if request.language == "fr" else "English"
+    
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"recommendations-{uuid.uuid4()}",
-        system_message="You are an AI farm management assistant. Provide actionable recommendations."
+        system_message=f"You are an AI farm management assistant. Provide actionable recommendations. Always respond in {language_name}."
     ).with_model("openai", "gpt-4o")
     
     message = UserMessage(
-        text=f"Generate 3 prioritized farm management recommendations based on:\nSensors: {sensor_summary}\nLow stock items: {low_stock_summary or 'None'}\n\nFormat: Priority (high/medium/low), Title (short), Description (1-2 sentences)"
+        text=f"Generate 3 prioritized farm management recommendations based on:\nSensors: {sensor_summary}\nLow stock items: {low_stock_summary or 'None'}\n\nFormat: Priority (high/medium/low), Title (short), Description (1-2 sentences). Respond in {language_name}."
     )
     
     response = await chat.send_message(message)
