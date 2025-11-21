@@ -376,6 +376,197 @@ async def get_ai_irrigation_recommendation(request: AIRecommendationRequest = AI
     
     return {"recommendation": response}
 
+@api_router.get("/irrigation/auto-settings")
+async def get_auto_irrigation_settings(current_user: Dict = Depends(get_current_user)):
+    settings = await db.auto_irrigation_settings.find_one({"user_id": current_user['user_id']}, {"_id": 0})
+    
+    if not settings:
+        # Create default settings with AI recommendations
+        default_settings = AutoIrrigationSettings(user_id=current_user['user_id'])
+        settings_dict = default_settings.model_dump()
+        settings_dict['created_at'] = settings_dict['created_at'].isoformat()
+        if settings_dict.get('last_triggered'):
+            settings_dict['last_triggered'] = settings_dict['last_triggered'].isoformat()
+        
+        # Get AI recommendations for thresholds
+        sensors = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(10).to_list(10)
+        plants = await db.plants.find({}, {"_id": 0}).to_list(100)
+        
+        sensor_summary = ", ".join([f"{s['sensor_type']}: {s['value']}{s['unit']}" for s in sensors[:6]])
+        plants_summary = f"{len(plants)} plants ({sum(1 for p in plants if p['status'] == 'healthy')} healthy)"
+        
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"auto-irrigation-recommend-{uuid.uuid4()}",
+            system_message="You are an agricultural AI assistant. Recommend optimal irrigation thresholds."
+        ).with_model("openai", "gpt-4o")
+        
+        message = UserMessage(
+            text=f"Based on current conditions: {sensor_summary} and {plants_summary}, recommend optimal thresholds for automatic irrigation. Provide only two numbers: temperature threshold in °C and humidity threshold in %. Format: 'Temperature: X°C, Humidity: Y%'"
+        )
+        
+        ai_response = await chat.send_message(message)
+        
+        # Parse AI response to extract thresholds
+        try:
+            import re
+            temp_match = re.search(r'Temperature:\s*(\d+\.?\d*)', ai_response)
+            humidity_match = re.search(r'Humidity:\s*(\d+\.?\d*)', ai_response)
+            if temp_match:
+                settings_dict['recommended_temp_threshold'] = float(temp_match.group(1))
+            if humidity_match:
+                settings_dict['recommended_humidity_threshold'] = float(humidity_match.group(1))
+        except:
+            settings_dict['recommended_temp_threshold'] = 30.0
+            settings_dict['recommended_humidity_threshold'] = 40.0
+        
+        await db.auto_irrigation_settings.insert_one(settings_dict)
+        settings_dict.pop('_id', None)
+        return settings_dict
+    
+    return settings
+
+@api_router.put("/irrigation/auto-settings")
+async def update_auto_irrigation_settings(settings: AutoIrrigationSettings, current_user: Dict = Depends(get_current_user)):
+    settings_dict = settings.model_dump()
+    settings_dict['user_id'] = current_user['user_id']
+    settings_dict['created_at'] = settings_dict['created_at'].isoformat()
+    if settings_dict.get('last_triggered'):
+        settings_dict['last_triggered'] = settings_dict['last_triggered'].isoformat()
+    
+    await db.auto_irrigation_settings.update_one(
+        {"user_id": current_user['user_id']},
+        {"$set": settings_dict},
+        upsert=True
+    )
+    return {"message": "Settings updated successfully"}
+
+@api_router.post("/irrigation/trigger-auto")
+async def trigger_auto_irrigation(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
+    # Get current sensor data
+    sensors = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(10).to_list(10)
+    
+    # Find temperature and humidity
+    temperature = next((s['value'] for s in sensors if s['sensor_type'] == 'temperature'), 25.0)
+    humidity = next((s['value'] for s in sensors if s['sensor_type'] == 'humidity'), 50.0)
+    
+    # Get auto settings
+    settings = await db.auto_irrigation_settings.find_one({"user_id": current_user['user_id']}, {"_id": 0})
+    
+    if not settings:
+        raise HTTPException(status_code=404, detail="Auto irrigation settings not found. Please configure first.")
+    
+    # Check if conditions require irrigation
+    should_irrigate = False
+    reasons = []
+    
+    if temperature > settings['temperature_threshold']:
+        should_irrigate = True
+        reasons.append(f"Temperature ({temperature}°C) exceeds threshold ({settings['temperature_threshold']}°C)")
+    
+    if humidity < settings['humidity_threshold']:
+        should_irrigate = True
+        reasons.append(f"Humidity ({humidity}%) below threshold ({settings['humidity_threshold']}%)")
+    
+    if not should_irrigate:
+        return {
+            "triggered": False,
+            "message": "Conditions do not require irrigation",
+            "temperature": temperature,
+            "humidity": humidity,
+            "thresholds": {
+                "temperature": settings['temperature_threshold'],
+                "humidity": settings['humidity_threshold']
+            }
+        }
+    
+    # Get plants for AI analysis
+    plants = await db.plants.find({}, {"_id": 0}).to_list(100)
+    
+    # Group plants by type and status
+    plant_summary = {}
+    for plant in plants:
+        key = f"{plant['plant_type']}_{plant['status']}"
+        plant_summary[key] = plant_summary.get(key, 0) + 1
+    
+    plants_info = ", ".join([f"{count} {ptype}" for ptype, count in plant_summary.items()])
+    
+    # Get AI recommendation for water amount
+    language_name = "French" if request.language == "fr" else "English"
+    
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"auto-irrigation-trigger-{uuid.uuid4()}",
+        system_message=f"You are an agricultural AI assistant. Calculate optimal irrigation amounts based on plant types, conditions, and growth stages. Always respond in {language_name}."
+    ).with_model("openai", "gpt-4o")
+    
+    message = UserMessage(
+        text=f"Auto-irrigation triggered. Conditions: Temperature {temperature}°C, Humidity {humidity}%. Plants: {plants_info}. Recommend specific water amounts (in liters) for each zone/plant type, considering their growth stage and current health status. Format your response with clear zones and amounts."
+    )
+    
+    ai_recommendation = await chat.send_message(message)
+    
+    # Parse AI response to create irrigation schedules (simplified - extract numbers)
+    import re
+    water_amounts = re.findall(r'(\d+\.?\d*)\s*(?:L|liters|litres)', ai_recommendation)
+    zones_irrigated = []
+    total_water = 0
+    
+    # Create irrigation schedules for each zone
+    zone_names = ["Zone A", "Zone B", "Zone C"]
+    for idx, zone in enumerate(zone_names[:len(water_amounts)]):
+        water_amount = float(water_amounts[idx]) if idx < len(water_amounts) else 150.0
+        total_water += water_amount
+        zones_irrigated.append(zone)
+        
+        # Create irrigation schedule
+        schedule = IrrigationSchedule(
+            zone_name=zone,
+            start_time=datetime.now(timezone.utc).strftime("%H:%M"),
+            duration_minutes=int(water_amount / 5),  # Assume 5L per minute
+            water_amount_liters=water_amount,
+            status="scheduled"
+        )
+        
+        schedule_dict = schedule.model_dump()
+        schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
+        await db.irrigation.insert_one(schedule_dict)
+    
+    # Record trigger
+    trigger = AutoIrrigationTrigger(
+        triggered_by="auto" if settings.get('enabled') else "manual",
+        temperature=temperature,
+        humidity=humidity,
+        zones_irrigated=zones_irrigated,
+        total_water_used=total_water,
+        ai_recommendation=ai_recommendation
+    )
+    
+    trigger_dict = trigger.model_dump()
+    trigger_dict['timestamp'] = trigger_dict['timestamp'].isoformat()
+    await db.auto_irrigation_triggers.insert_one(trigger_dict)
+    
+    # Update last triggered timestamp
+    await db.auto_irrigation_settings.update_one(
+        {"user_id": current_user['user_id']},
+        {"$set": {"last_triggered": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {
+        "triggered": True,
+        "reasons": reasons,
+        "zones_irrigated": zones_irrigated,
+        "total_water_used": total_water,
+        "ai_recommendation": ai_recommendation,
+        "temperature": temperature,
+        "humidity": humidity
+    }
+
+@api_router.get("/irrigation/auto-history")
+async def get_auto_irrigation_history(limit: int = 10, current_user: Dict = Depends(get_current_user)):
+    history = await db.auto_irrigation_triggers.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
+    return history
+
 # ==================== PLANTS ROUTES ====================
 
 @api_router.get("/plants")
