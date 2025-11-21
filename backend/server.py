@@ -465,24 +465,27 @@ async def create_sale(sale: Sale, current_user: Dict = Depends(get_current_user)
     sale_dict.pop('_id', None)
     return sale_dict
 
-@api_router.get("/sales/forecast")
-async def get_sales_forecast(current_user: Dict = Depends(get_current_user)):
+@api_router.post("/sales/forecast")
+async def get_sales_forecast(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
     # Get recent sales data
     sales = await db.sales.find({}, {"_id": 0}).sort("sale_date", -1).limit(30).to_list(30)
     
+    language_name = "French" if request.language == "fr" else "English"
+    
     if not sales:
-        return {"forecast": "No sales data available for forecasting"}
+        no_data_msg = "Aucune donnée de vente disponible pour les prévisions" if request.language == "fr" else "No sales data available for forecasting"
+        return {"forecast": no_data_msg}
     
     sales_summary = f"Total sales: {len(sales)}, Total revenue: ${sum(s['total_amount'] for s in sales):.2f}"
     
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"sales-forecast-{uuid.uuid4()}",
-        system_message="You are a sales forecasting AI. Analyze sales data and provide predictions."
+        system_message=f"You are a sales forecasting AI. Analyze sales data and provide predictions. Always respond in {language_name}."
     ).with_model("openai", "gpt-4o")
     
     message = UserMessage(
-        text=f"Based on this sales summary, provide a forecast for next month: {sales_summary}. Include expected demand trends and recommendations."
+        text=f"Based on this sales summary, provide a forecast for next month: {sales_summary}. Include expected demand trends and recommendations. Respond in {language_name}."
     )
     
     response = await chat.send_message(message)
