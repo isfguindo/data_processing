@@ -223,11 +223,13 @@ const Stock = ({ onLogout }) => {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     className="form-input"
                     value={newItem.quantity}
                     onChange={(e) => setNewItem({ ...newItem, quantity: e.target.value })}
                     required
                     data-testid="quantity-input"
+                    placeholder="0.00"
                   />
                 </div>
                 <div className="form-group">
@@ -247,11 +249,13 @@ const Stock = ({ onLogout }) => {
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     className="form-input"
                     value={newItem.min_threshold}
                     onChange={(e) => setNewItem({ ...newItem, min_threshold: e.target.value })}
                     required
                     data-testid="threshold-input"
+                    placeholder="0.00"
                   />
                 </div>
                 <div className="form-group">
