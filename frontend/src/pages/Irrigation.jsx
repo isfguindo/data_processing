@@ -139,6 +139,121 @@ const Irrigation = ({ onLogout }) => {
           <p>Planification et optimisation automatique</p>
         </div>
 
+        {/* Auto Irrigation System Card */}
+        <div className="content-card" style={{ background: 'linear-gradient(135deg, rgba(46, 125, 50, 0.05) 0%, rgba(102, 187, 106, 0.05) 100%)', borderLeft: '4px solid #2e7d32', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Zap size={28} color="#2e7d32" />
+              <div>
+                <h2 style={{ margin: 0 }}>Système d'Irrigation Automatique</h2>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: '#66bb6a' }}>
+                  Déclenchement intelligent basé sur l'IA et les conditions environnementales
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleToggleAutoIrrigation}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: autoSettings?.enabled ? '#2e7d32' : 'rgba(46, 125, 50, 0.1)',
+                color: autoSettings?.enabled ? 'white' : '#2e7d32',
+                border: 'none',
+                borderRadius: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease'
+              }}
+              data-testid="toggle-auto-irrigation"
+            >
+              <Power size={20} />
+              {autoSettings?.enabled ? 'ACTIVÉ' : 'DÉSACTIVÉ'}
+            </button>
+          </div>
+
+          {autoSettings && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #c8e6c9' }}>
+                <p style={{ fontSize: '0.875rem', color: '#66bb6a', marginBottom: '0.5rem', fontWeight: 600 }}>Seuil Température</p>
+                <p style={{ fontSize: '1.75rem', fontWeight: 700, color: '#2e7d32', margin: 0 }}>{autoSettings.temperature_threshold}°C</p>
+                {autoSettings.recommended_temp_threshold && (
+                  <p style={{ fontSize: '0.75rem', color: '#81c784', marginTop: '0.25rem' }}>
+                    IA recommande: {autoSettings.recommended_temp_threshold}°C
+                  </p>
+                )}
+              </div>
+              <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #c8e6c9' }}>
+                <p style={{ fontSize: '0.875rem', color: '#66bb6a', marginBottom: '0.5rem', fontWeight: 600 }}>Seuil Humidité</p>
+                <p style={{ fontSize: '1.75rem', fontWeight: 700, color: '#2e7d32', margin: 0 }}>{autoSettings.humidity_threshold}%</p>
+                {autoSettings.recommended_humidity_threshold && (
+                  <p style={{ fontSize: '0.75rem', color: '#81c784', marginTop: '0.25rem' }}>
+                    IA recommande: {autoSettings.recommended_humidity_threshold}%
+                  </p>
+                )}
+              </div>
+              <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', border: '1px solid #c8e6c9' }}>
+                <p style={{ fontSize: '0.875rem', color: '#66bb6a', marginBottom: '0.5rem', fontWeight: 600 }}>Dernier Déclenchement</p>
+                <p style={{ fontSize: '1rem', fontWeight: 600, color: '#2e7d32', margin: 0 }}>
+                  {autoSettings.last_triggered ? new Date(autoSettings.last_triggered).toLocaleString('fr-FR') : 'Jamais'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleTriggerAutoIrrigation}
+              disabled={triggeringAuto}
+              data-testid="trigger-auto-button"
+              style={{ flex: 1, minWidth: '200px' }}
+            >
+              <Zap size={20} />
+              {triggeringAuto ? 'Analyse en cours...' : 'Analyser et Déclencher'}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowAutoSettings(true)}
+              data-testid="config-auto-button"
+              style={{ flex: 1, minWidth: '200px' }}
+            >
+              <SettingsIcon size={20} />
+              Configurer les Seuils
+            </button>
+          </div>
+
+          {/* Auto History */}
+          {autoHistory.length > 0 && (
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #c8e6c9' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', color: '#2e7d32' }}>
+                <History size={20} />
+                Historique des Déclenchements (5 derniers)
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {autoHistory.map((trigger, idx) => (
+                  <div key={idx} style={{ background: 'white', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #c8e6c9', fontSize: '0.875rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontWeight: 600, color: '#2e7d32' }}>
+                          {trigger.zones_irrigated.join(', ')}
+                        </span>
+                        <span style={{ color: '#66bb6a', marginLeft: '1rem' }}>
+                          {trigger.total_water_used.toFixed(0)}L d'eau
+                        </span>
+                      </div>
+                      <span style={{ color: '#81c784' }}>
+                        {new Date(trigger.timestamp).toLocaleString('fr-FR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
           <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="add-schedule-button">
             <Plus size={20} />
