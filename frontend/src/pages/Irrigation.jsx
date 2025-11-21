@@ -25,6 +25,8 @@ const Irrigation = ({ onLogout }) => {
 
   useEffect(() => {
     fetchSchedules();
+    fetchAutoSettings();
+    fetchAutoHistory();
   }, []);
 
   const fetchSchedules = async () => {
@@ -35,6 +37,66 @@ const Irrigation = ({ onLogout }) => {
       toast.error('Erreur lors du chargement des horaires');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAutoSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/irrigation/auto-settings`);
+      setAutoSettings(response.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des paramètres auto');
+    }
+  };
+
+  const fetchAutoHistory = async () => {
+    try {
+      const response = await axios.get(`${API}/irrigation/auto-history?limit=5`);
+      setAutoHistory(response.data);
+    } catch (error) {
+      console.error('Erreur lors du chargement de l\'historique');
+    }
+  };
+
+  const handleToggleAutoIrrigation = async () => {
+    try {
+      const newSettings = { ...autoSettings, enabled: !autoSettings.enabled };
+      await axios.put(`${API}/irrigation/auto-settings`, newSettings);
+      setAutoSettings(newSettings);
+      toast.success(newSettings.enabled ? 'Irrigation automatique activée !' : 'Irrigation automatique désactivée');
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
+  const handleSaveAutoSettings = async () => {
+    try {
+      await axios.put(`${API}/irrigation/auto-settings`, autoSettings);
+      toast.success('Paramètres sauvegardés !');
+      setShowAutoSettings(false);
+    } catch (error) {
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  };
+
+  const handleTriggerAutoIrrigation = async () => {
+    setTriggeringAuto(true);
+    try {
+      const response = await axios.post(`${API}/irrigation/trigger-auto`, { language: 'fr' });
+      
+      if (response.data.triggered) {
+        toast.success(`Irrigation déclenchée ! ${response.data.zones_irrigated.length} zones irriguées avec ${response.data.total_water_used.toFixed(0)}L d'eau.`);
+        setAiRecommendation(response.data.ai_recommendation);
+      } else {
+        toast.info(response.data.message);
+      }
+      
+      fetchSchedules();
+      fetchAutoHistory();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Erreur lors du déclenchement');
+    } finally {
+      setTriggeringAuto(false);
     }
   };
 
