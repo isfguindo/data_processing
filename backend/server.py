@@ -409,7 +409,8 @@ async def get_stock(current_user: Dict = Depends(get_current_user)):
 async def create_stock_item(item: Stock, current_user: Dict = Depends(get_current_user)):
     item_dict = item.model_dump()
     item_dict['last_updated'] = item_dict['last_updated'].isoformat()
-    await db.stock.insert_one(item_dict)
+    result = await db.stock.insert_one(item_dict)
+    item_dict.pop('_id', None)
     return item_dict
 
 @api_router.put("/stock/{item_id}")
