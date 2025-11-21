@@ -6,19 +6,21 @@ import { getTranslation } from '../locales';
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
+  const { language, changeLanguage } = useLanguage();
+  const t = (key) => getTranslation(language, key);
 
   const navItems = [
-    { path: '/dashboard', label: 'Tableau de Bord', icon: LayoutDashboard },
-    { path: '/sensors', label: 'Capteurs IoT', icon: Droplets },
-    { path: '/irrigation', label: 'Irrigation', icon: Droplets },
-    { path: '/plants', label: 'Plantes', icon: Sprout },
-    { path: '/stock', label: 'Stock', icon: Package },
-    { path: '/sales', label: 'Ventes', icon: DollarSign },
-    { path: '/customers', label: 'Clients', icon: Users },
-    { path: '/employees', label: 'Personnel', icon: UserCog },
-    { path: '/tasks', label: 'Tâches', icon: CheckSquare },
-    { path: '/reports', label: 'Rapports', icon: BarChart3 },
-    { path: '/settings', label: 'Paramètres', icon: Settings },
+    { path: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+    { path: '/sensors', labelKey: 'nav.sensors', icon: Droplets },
+    { path: '/irrigation', labelKey: 'nav.irrigation', icon: Droplets },
+    { path: '/plants', labelKey: 'nav.plants', icon: Sprout },
+    { path: '/stock', labelKey: 'nav.stock', icon: Package },
+    { path: '/sales', labelKey: 'nav.sales', icon: DollarSign },
+    { path: '/customers', labelKey: 'nav.customers', icon: Users },
+    { path: '/employees', labelKey: 'nav.employees', icon: UserCog },
+    { path: '/tasks', labelKey: 'nav.tasks', icon: CheckSquare },
+    { path: '/reports', labelKey: 'nav.reports', icon: BarChart3 },
+    { path: '/settings', labelKey: 'nav.settings', icon: Settings },
   ];
 
   return (
