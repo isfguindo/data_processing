@@ -129,6 +129,85 @@ const Dashboard = ({ onLogout }) => {
           </div>
         </div>
 
+        {/* Charts Section */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Sales Trend Chart */}
+          <div className="content-card">
+            <h2 style={{ marginBottom: '1.5rem' }}>📈 Évolution des Ventes (7 derniers jours)</h2>
+            {salesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={salesData}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#2e7d32" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#2e7d32" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#c8e6c9" />
+                  <XAxis dataKey="date" stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                  <YAxis stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                  <Tooltip 
+                    contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #c8e6c9', borderRadius: '8px' }}
+                    formatter={(value) => [`$${value.toFixed(2)}`, 'Montant']}
+                  />
+                  <Area type="monotone" dataKey="montant" stroke="#2e7d32" strokeWidth={2} fill="url(#colorSales)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#66bb6a', padding: '2rem' }}>Aucune donnée de vente</p>
+            )}
+          </div>
+
+          {/* Stock Distribution Pie Chart */}
+          <div className="content-card">
+            <h2 style={{ marginBottom: '1.5rem' }}>📦 Répartition du Stock par Catégorie</h2>
+            {stockDistribution.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={stockDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {stockDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#66bb6a', padding: '2rem' }}>Aucun stock</p>
+            )}
+          </div>
+        </div>
+
+        {/* Sensor Trend Chart */}
+        <div className="content-card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem' }}>🌡️ Tendance de la Température</h2>
+          {sensorTrends.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={sensorTrends}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#c8e6c9" />
+                <XAxis dataKey="time" stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                <YAxis stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                <Tooltip 
+                  contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #c8e6c9', borderRadius: '8px' }}
+                  formatter={(value) => [`${value}°C`, 'Température']}
+                />
+                <Line type="monotone" dataKey="temperature" stroke="#f57f17" strokeWidth={2} dot={{ fill: '#f57f17', r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p style={{ textAlign: 'center', color: '#66bb6a', padding: '2rem' }}>Aucune donnée de capteur</p>
+          )}
+        </div>
+
         <div className="content-card">
           <h2>Capteurs en Temps Réel</h2>
           <div className="sensor-grid">
