@@ -121,7 +121,17 @@ class Stock(BaseModel):
     unit: str
     min_threshold: float
     price_per_unit: float
+    currency: str = "USD"  # EUR, USD, XAF, GBP, MAD, etc.
     last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class StockUpdate(BaseModel):
+    item_name: Optional[str] = None
+    category: Optional[str] = None
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    min_threshold: Optional[float] = None
+    price_per_unit: Optional[float] = None
+    currency: Optional[str] = None
 
 class Sale(BaseModel):
     model_config = ConfigDict(extra="ignore")
