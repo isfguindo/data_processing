@@ -441,12 +441,27 @@ async def create_stock_item(item: Stock, current_user: Dict = Depends(get_curren
     return item_dict
 
 @api_router.put("/stock/{item_id}")
-async def update_stock_item(item_id: str, quantity: float, current_user: Dict = Depends(get_current_user)):
-    await db.stock.update_one(
+async def update_stock_item(item_id: str, update_data: StockUpdate, current_user: Dict = Depends(get_current_user)):
+    # Prepare update dict with only provided fields
+    update_dict = {k: v for k, v in update_data.model_dump().items() if v is not None}
+    
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    # Add last_updated timestamp
+    update_dict['last_updated'] = datetime.now(timezone.utc).isoformat()
+    
+    result = await db.stock.update_one(
         {"id": item_id},
-        {"$set": {"quantity": quantity, "last_updated": datetime.now(timezone.utc).isoformat()}}
+        {"$set": update_dict}
     )
-    return {"message": "Stock updated"}
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Stock item not found")
+    
+    # Return updated item
+    updated_item = await db.stock.find_one({"id": item_id}, {"_id": 0})
+    return updated_item
 
 @api_router.delete("/stock/{item_id}")
 async def delete_stock_item(item_id: str, current_user: Dict = Depends(get_current_user)):
