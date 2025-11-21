@@ -373,8 +373,11 @@ async def diagnose_plant(request: PlantDiagnosisRequest, current_user: Dict = De
     # Create image content
     image_content = ImageContent(image_base64=image_base64)
     
+    # Get language-specific prompt
+    language_name = "French" if request.language == "fr" else "English"
+    
     message = UserMessage(
-        text="Analyze this plant image quickly. Provide: 1) Health status (1-2 sentences), 2) Visible diseases/pests if any, 3) Nutrient issues if any, 4) 2-3 specific treatment recommendations, 5) 1-2 preventive tips. Be concise but practical.",
+        text=f"Analyze this plant image quickly and respond in {language_name}. Provide: 1) Health status (1-2 sentences), 2) Visible diseases/pests if any, 3) Nutrient issues if any, 4) 2-3 specific treatment recommendations, 5) 1-2 preventive tips. Be concise but practical.",
         file_contents=[image_content]
     )
     
