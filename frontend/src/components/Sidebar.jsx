@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Droplets, Sprout, Package, DollarSign, Users, UserCog, CheckSquare, BarChart3, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Droplets, Sprout, Package, DollarSign, Users, UserCog, CheckSquare, BarChart3, Settings, LogOut, Globe } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getTranslation } from '../locales';
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
