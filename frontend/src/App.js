@@ -59,8 +59,9 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
+    <LanguageProvider>
+      <BrowserRouter>
+        <Routes>
         <Route
           path="/login"
           element={
