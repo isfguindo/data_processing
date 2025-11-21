@@ -145,8 +145,92 @@ const Reports = ({ onLogout }) => {
           </div>
         </div>
 
+        {/* Charts Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+          {/* Monthly Revenue Chart */}
+          <div className="content-card">
+            <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <DollarSign size={24} color="#2e7d32" />
+              Revenus Mensuels
+            </h2>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={revenueByMonth}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#c8e6c9" />
+                <XAxis dataKey="month" stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                <YAxis stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+                <Tooltip 
+                  contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #c8e6c9', borderRadius: '8px' }}
+                  formatter={(value, name) => [name === 'revenue' ? `$${value.toFixed(2)}` : value, name === 'revenue' ? 'Revenu' : 'Ventes']}
+                />
+                <Legend />
+                <Bar dataKey="revenue" fill="#2e7d32" name="Revenu" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="sales" fill="#66bb6a" name="Nombre de ventes" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Plant Health Distribution */}
+          <div className="content-card">
+            <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Leaf size={24} color="#2e7d32" />
+              État de Santé des Plantes
+            </h2>
+            {plantHealthData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={plantHealthData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={90}
+                    innerRadius={50}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {plantHealthData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#66bb6a', padding: '4rem' }}>Aucune plante enregistrée</p>
+            )}
+          </div>
+        </div>
+
+        {/* Water Consumption Chart */}
+        <div className="content-card" style={{ marginBottom: '2rem' }}>
+          <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Droplet size={24} color="#0288d1" />
+            Consommation d'Eau (7 derniers jours)
+          </h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={waterConsumption}>
+              <defs>
+                <linearGradient id="colorWater" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0288d1" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#0288d1" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#c8e6c9" />
+              <XAxis dataKey="day" stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+              <YAxis stroke="#66bb6a" style={{ fontSize: '0.875rem' }} />
+              <Tooltip 
+                contentStyle={{ background: 'rgba(255,255,255,0.95)', border: '1px solid #c8e6c9', borderRadius: '8px' }}
+                formatter={(value) => [`${value.toFixed(0)} L`, 'Consommation']}
+              />
+              <Area type="monotone" dataKey="consumption" stroke="#0288d1" strokeWidth={2} fill="url(#colorWater)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Detailed Yield Table */}
         <div className="content-card">
-          <h2>Produits Récoltés</h2>
+          <h2>📊 Tableau Détaillé des Rendements</h2>
           {yieldReport?.products?.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#66bb6a', padding: '2rem' }}>Aucun produit récolté dans le stock</p>
           ) : (
@@ -159,18 +243,36 @@ const Reports = ({ onLogout }) => {
                     <th>Unité</th>
                     <th>Prix Unitaire</th>
                     <th>Valeur Totale</th>
+                    <th>Performance</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {yieldReport?.products?.map((product) => (
-                    <tr key={product.id} data-testid={`yield-row-${product.id}`}>
-                      <td>{product.item_name}</td>
-                      <td data-testid={`yield-quantity-${product.id}`}>{product.quantity}</td>
-                      <td>{product.unit}</td>
-                      <td>${product.price_per_unit}</td>
-                      <td data-testid={`yield-value-${product.id}`}>${(product.quantity * product.price_per_unit).toFixed(2)}</td>
-                    </tr>
-                  ))}
+                  {yieldReport?.products?.map((product) => {
+                    const totalValue = product.quantity * product.price_per_unit;
+                    const performance = totalValue > 500 ? 'Excellent' : totalValue > 200 ? 'Bon' : 'Faible';
+                    const performanceColor = totalValue > 500 ? '#2e7d32' : totalValue > 200 ? '#66bb6a' : '#f57f17';
+                    return (
+                      <tr key={product.id} data-testid={`yield-row-${product.id}`}>
+                        <td>{product.item_name}</td>
+                        <td data-testid={`yield-quantity-${product.id}`}>{product.quantity.toFixed(2)}</td>
+                        <td>{product.unit}</td>
+                        <td>${product.price_per_unit.toFixed(2)}</td>
+                        <td data-testid={`yield-value-${product.id}`} style={{ fontWeight: 600 }}>${totalValue.toFixed(2)}</td>
+                        <td>
+                          <span style={{ 
+                            padding: '0.25rem 0.75rem', 
+                            borderRadius: '12px', 
+                            background: `${performanceColor}15`,
+                            color: performanceColor,
+                            fontSize: '0.875rem',
+                            fontWeight: 600
+                          }}>
+                            {performance}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -178,7 +280,7 @@ const Reports = ({ onLogout }) => {
         </div>
 
         <div className="content-card" style={{ background: 'rgba(76, 175, 80, 0.05)', borderLeft: '4px solid #4caf50' }}>
-          <h2 style={{ color: '#2e7d32' }}>Impact Écologique</h2>
+          <h2 style={{ color: '#2e7d32' }}>🌱 Impact Écologique</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
             <div>
               <p style={{ fontSize: '0.875rem', color: '#66bb6a', fontWeight: 600, marginBottom: '0.5rem' }}>Consommation d'Eau</p>
