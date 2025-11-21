@@ -559,6 +559,26 @@ async def get_auto_irrigation_history(limit: int = 10, current_user: Dict = Depe
     history = await db.auto_irrigation_triggers.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     return history
 
+# Generic irrigation routes (MUST be after specific routes to avoid conflicts)
+@api_router.get("/irrigation")
+async def get_irrigation_schedules(current_user: Dict = Depends(get_current_user)):
+    schedules = await db.irrigation.find({}, {"_id": 0}).to_list(1000)
+    return schedules
+
+@api_router.post("/irrigation")
+async def create_irrigation_schedule(schedule: IrrigationSchedule, current_user: Dict = Depends(get_current_user)):
+    schedule_dict = schedule.model_dump()
+    schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
+    result = await db.irrigation.insert_one(schedule_dict)
+    # Return the schedule without MongoDB's _id
+    schedule_dict.pop('_id', None)
+    return schedule_dict
+
+@api_router.put("/irrigation/{schedule_id}")
+async def update_irrigation_schedule(schedule_id: str, status: str, current_user: Dict = Depends(get_current_user)):
+    await db.irrigation.update_one({"id": schedule_id}, {"$set": {"status": status}})
+    return {"message": "Schedule updated"}
+
 # ==================== PLANTS ROUTES ====================
 
 @api_router.get("/plants")
