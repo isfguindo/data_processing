@@ -432,19 +432,24 @@ async def get_auto_irrigation_settings(current_user: Dict = Depends(get_current_
     return settings
 
 @api_router.put("/irrigation/auto-settings")
-async def update_auto_irrigation_settings(settings: AutoIrrigationSettings, current_user: Dict = Depends(get_current_user)):
-    settings_dict = settings.model_dump()
-    settings_dict['user_id'] = current_user['user_id']
-    settings_dict['created_at'] = settings_dict['created_at'].isoformat()
-    if settings_dict.get('last_triggered'):
-        settings_dict['last_triggered'] = settings_dict['last_triggered'].isoformat()
+async def update_auto_irrigation_settings(settings: AutoIrrigationSettingsUpdate, current_user: Dict = Depends(get_current_user)):
+    # Only update provided fields
+    update_dict = {k: v for k, v in settings.model_dump().items() if v is not None}
     
-    await db.auto_irrigation_settings.update_one(
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    
+    result = await db.auto_irrigation_settings.update_one(
         {"user_id": current_user['user_id']},
-        {"$set": settings_dict},
-        upsert=True
+        {"$set": update_dict}
     )
-    return {"message": "Settings updated successfully"}
+    
+    if result.modified_count == 0 and result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    
+    # Return updated settings
+    updated = await db.auto_irrigation_settings.find_one({"user_id": current_user['user_id']}, {"_id": 0})
+    return updated
 
 @api_router.post("/irrigation/trigger-auto")
 async def trigger_auto_irrigation(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
