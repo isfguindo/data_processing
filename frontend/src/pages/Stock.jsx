@@ -255,20 +255,46 @@ const Stock = ({ onLogout }) => {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Prix Unitaire ($)</label>
+                  <label>Devise</label>
+                  <select
+                    className="form-input"
+                    value={newItem.currency}
+                    onChange={(e) => setNewItem({ ...newItem, currency: e.target.value })}
+                    data-testid="currency-select"
+                  >
+                    <option value="USD">USD - Dollar Américain ($)</option>
+                    <option value="EUR">EUR - Euro (€)</option>
+                    <option value="XAF">XAF - Franc CFA (FCFA)</option>
+                    <option value="GBP">GBP - Livre Sterling (£)</option>
+                    <option value="MAD">MAD - Dirham Marocain (DH)</option>
+                    <option value="CAD">CAD - Dollar Canadien (C$)</option>
+                    <option value="CHF">CHF - Franc Suisse (CHF)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Prix Unitaire</label>
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     className="form-input"
                     value={newItem.price_per_unit}
                     onChange={(e) => setNewItem({ ...newItem, price_per_unit: e.target.value })}
                     required
                     data-testid="price-input"
+                    placeholder="0.00"
                   />
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                  <button type="submit" className="btn btn-primary" data-testid="submit-stock-button">Ajouter</button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Annuler</button>
+                  <button type="submit" className="btn btn-primary" data-testid="submit-stock-button">
+                    {isEditing ? 'Modifier' : 'Ajouter'}
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    setShowModal(false);
+                    setIsEditing(false);
+                    setEditingItemId(null);
+                    setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
+                  }}>Annuler</button>
                 </div>
               </form>
             </div>
