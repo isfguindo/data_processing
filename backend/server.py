@@ -622,8 +622,9 @@ async def generate_recommendations(current_user: Dict = Depends(get_current_user
     
     rec_dict = rec.model_dump()
     rec_dict['created_at'] = rec_dict['created_at'].isoformat()
-    await db.recommendations.insert_one(rec_dict)
+    result = await db.recommendations.insert_one(rec_dict)
     
+    rec_dict.pop('_id', None)
     return rec_dict
 
 # ==================== SETTINGS ====================
