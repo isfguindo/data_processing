@@ -299,7 +299,9 @@ async def get_irrigation_schedules(current_user: Dict = Depends(get_current_user
 async def create_irrigation_schedule(schedule: IrrigationSchedule, current_user: Dict = Depends(get_current_user)):
     schedule_dict = schedule.model_dump()
     schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
-    await db.irrigation.insert_one(schedule_dict)
+    result = await db.irrigation.insert_one(schedule_dict)
+    # Return the schedule without MongoDB's _id
+    schedule_dict.pop('_id', None)
     return schedule_dict
 
 @api_router.put("/irrigation/{schedule_id}")
