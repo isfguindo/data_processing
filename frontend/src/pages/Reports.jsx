@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '../App';
 import Sidebar from '../components/Sidebar';
-import { BarChart3, TrendingUp, Package, Leaf } from 'lucide-react';
+import { BarChart3, TrendingUp, Package, Leaf, Droplet, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Reports = ({ onLogout }) => {
   const [dashboardStats, setDashboardStats] = useState(null);
