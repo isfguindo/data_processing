@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '../App';
 import Sidebar from '../components/Sidebar';
-import { Plus, Brain } from 'lucide-react';
+import { Plus, Brain, Power, Settings as SettingsIcon, Zap, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Irrigation = ({ onLogout }) => {
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showAutoSettings, setShowAutoSettings] = useState(false);
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [triggeringAuto, setTriggeringAuto] = useState(false);
+  const [autoSettings, setAutoSettings] = useState(null);
+  const [autoHistory, setAutoHistory] = useState([]);
   const [newSchedule, setNewSchedule] = useState({
     zone_name: '',
     start_time: '',
