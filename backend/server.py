@@ -333,28 +333,10 @@ async def get_sensor_history(sensor_type: str, limit: int = 100, current_user: D
 
 # ==================== IRRIGATION ROUTES ====================
 
-@api_router.get("/irrigation")
-async def get_irrigation_schedules(current_user: Dict = Depends(get_current_user)):
-    schedules = await db.irrigation.find({}, {"_id": 0}).to_list(1000)
-    return schedules
-
-@api_router.post("/irrigation")
-async def create_irrigation_schedule(schedule: IrrigationSchedule, current_user: Dict = Depends(get_current_user)):
-    schedule_dict = schedule.model_dump()
-    schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
-    result = await db.irrigation.insert_one(schedule_dict)
-    # Return the schedule without MongoDB's _id
-    schedule_dict.pop('_id', None)
-    return schedule_dict
-
-@api_router.put("/irrigation/{schedule_id}")
-async def update_irrigation_schedule(schedule_id: str, status: str, current_user: Dict = Depends(get_current_user)):
-    await db.irrigation.update_one({"id": schedule_id}, {"$set": {"status": status}})
-    return {"message": "Schedule updated"}
-
 class AIRecommendationRequest(BaseModel):
     language: str = "fr"
 
+# Specific routes MUST come before routes with path parameters
 @api_router.post("/irrigation/ai-recommend")
 async def get_ai_irrigation_recommendation(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
     # Get latest sensor data
