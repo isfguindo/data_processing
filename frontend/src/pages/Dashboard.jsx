@@ -9,6 +9,9 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, X
 const Dashboard = ({ onLogout }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [salesData, setSalesData] = useState([]);
+  const [sensorTrends, setSensorTrends] = useState([]);
+  const [stockDistribution, setStockDistribution] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -18,8 +21,41 @@ const Dashboard = ({ onLogout }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get(`${API}/reports/dashboard`);
-      setStats(response.data);
+      const [dashResponse, salesResponse, sensorsResponse, stockResponse] = await Promise.all([
+        axios.get(`${API}/reports/dashboard`),
+        axios.get(`${API}/sales`),
+        axios.get(`${API}/sensors/history?sensor_type=temperature&limit=10`),
+        axios.get(`${API}/stock`)
+      ]);
+      
+      setStats(dashResponse.data);
+      
+      // Process sales data for chart (last 7 days)
+      const last7Days = salesResponse.data.slice(0, 7).reverse();
+      const salesChartData = last7Days.map(sale => ({
+        date: new Date(sale.sale_date).toLocaleDateString('fr-FR', { month: 'short', day: 'numeric' }),
+        montant: sale.total_amount
+      }));
+      setSalesData(salesChartData);
+      
+      // Process sensor trends
+      const sensorChartData = sensorsResponse.data.reverse().map((sensor, idx) => ({
+        time: `T${idx + 1}`,
+        temperature: sensor.value
+      }));
+      setSensorTrends(sensorChartData);
+      
+      // Process stock distribution by category
+      const categoryMap = {};
+      stockResponse.data.forEach(item => {
+        categoryMap[item.category] = (categoryMap[item.category] || 0) + 1;
+      });
+      const stockChart = Object.entries(categoryMap).map(([category, count]) => ({
+        name: getCategoryLabel(category),
+        value: count
+      }));
+      setStockDistribution(stockChart);
+      
     } catch (error) {
       toast.error('Erreur lors du chargement des données');
     } finally {
