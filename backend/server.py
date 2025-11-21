@@ -314,23 +314,29 @@ async def update_irrigation_schedule(schedule_id: str, status: str, current_user
     await db.irrigation.update_one({"id": schedule_id}, {"$set": {"status": status}})
     return {"message": "Schedule updated"}
 
+class AIRecommendationRequest(BaseModel):
+    language: str = "fr"
+
 @api_router.post("/irrigation/ai-recommend")
-async def get_ai_irrigation_recommendation(current_user: Dict = Depends(get_current_user)):
+async def get_ai_irrigation_recommendation(request: AIRecommendationRequest = AIRecommendationRequest(), current_user: Dict = Depends(get_current_user)):
     # Get latest sensor data
     sensors = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(10).to_list(10)
     
     # Prepare data for AI
     sensor_summary = "\n".join([f"{s['sensor_type']}: {s['value']} {s['unit']}" for s in sensors[:6]])
     
+    # Language-specific prompt
+    language_name = "French" if request.language == "fr" else "English"
+    
     # Get AI recommendation
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
         session_id=f"irrigation-{uuid.uuid4()}",
-        system_message="You are an agricultural AI assistant. Provide irrigation recommendations based on sensor data."
+        system_message=f"You are an agricultural AI assistant. Provide irrigation recommendations based on sensor data. Always respond in {language_name}."
     ).with_model("openai", "gpt-4o")
     
     message = UserMessage(
-        text=f"Based on these sensor readings, provide irrigation recommendations:\n{sensor_summary}\n\nProvide specific water amount (liters) and duration (minutes) recommendations."
+        text=f"Based on these sensor readings, provide irrigation recommendations:\n{sensor_summary}\n\nProvide specific water amount (liters) and duration (minutes) recommendations. Respond in {language_name}."
     )
     
     response = await chat.send_message(message)
