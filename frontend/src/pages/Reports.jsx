@@ -9,6 +9,10 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, X
 const Reports = ({ onLogout }) => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [yieldReport, setYieldReport] = useState(null);
+  const [salesData, setSalesData] = useState([]);
+  const [revenueByMonth, setRevenueByMonth] = useState([]);
+  const [plantHealthData, setPlantHealthData] = useState([]);
+  const [waterConsumption, setWaterConsumption] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,17 +21,62 @@ const Reports = ({ onLogout }) => {
 
   const fetchReports = async () => {
     try {
-      const [statsRes, yieldRes] = await Promise.all([
+      const [statsRes, yieldRes, salesRes, plantsRes] = await Promise.all([
         axios.get(`${API}/reports/dashboard`),
         axios.get(`${API}/reports/yield`),
+        axios.get(`${API}/sales`),
+        axios.get(`${API}/plants`)
       ]);
       setDashboardStats(statsRes.data);
       setYieldReport(yieldRes.data);
+      setSalesData(salesRes.data);
+      
+      // Process revenue by month (simulate monthly data)
+      const monthlyRevenue = generateMonthlyRevenue(salesRes.data);
+      setRevenueByMonth(monthlyRevenue);
+      
+      // Process plant health distribution
+      const healthData = processPlantHealth(plantsRes.data);
+      setPlantHealthData(healthData);
+      
+      // Generate water consumption data (simulated)
+      const waterData = generateWaterConsumption();
+      setWaterConsumption(waterData);
+      
     } catch (error) {
       toast.error('Erreur lors du chargement des rapports');
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateMonthlyRevenue = (sales) => {
+    const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'];
+    return months.map((month, idx) => ({
+      month,
+      revenue: Math.random() * 5000 + 2000,
+      sales: Math.floor(Math.random() * 30 + 10)
+    }));
+  };
+
+  const processPlantHealth = (plants) => {
+    const healthMap = { healthy: 0, sick: 0, treated: 0 };
+    plants.forEach(plant => {
+      healthMap[plant.status] = (healthMap[plant.status] || 0) + 1;
+    });
+    return [
+      { name: 'Saines', value: healthMap.healthy, color: '#2e7d32' },
+      { name: 'Malades', value: healthMap.sick, color: '#f57f17' },
+      { name: 'Traitées', value: healthMap.treated, color: '#0288d1' }
+    ].filter(item => item.value > 0);
+  };
+
+  const generateWaterConsumption = () => {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    return days.map(day => ({
+      day,
+      consumption: Math.random() * 500 + 200
+    }));
   };
 
   if (loading) {
