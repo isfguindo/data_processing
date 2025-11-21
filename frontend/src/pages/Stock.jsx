@@ -47,11 +47,49 @@ const Stock = ({ onLogout }) => {
       });
       toast.success('Article ajouté au stock !');
       setShowModal(false);
-      setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '' });
+      setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
       fetchStock();
     } catch (error) {
       toast.error('Erreur lors de l\'ajout');
     }
+  };
+
+  const handleEditItem = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/stock/${editingItemId}`, {
+        item_name: newItem.item_name,
+        category: newItem.category,
+        quantity: parseFloat(newItem.quantity),
+        unit: newItem.unit,
+        min_threshold: parseFloat(newItem.min_threshold),
+        price_per_unit: parseFloat(newItem.price_per_unit),
+        currency: newItem.currency,
+      });
+      toast.success('Article modifié avec succès !');
+      setShowModal(false);
+      setIsEditing(false);
+      setEditingItemId(null);
+      setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
+      fetchStock();
+    } catch (error) {
+      toast.error('Erreur lors de la modification');
+    }
+  };
+
+  const openEditModal = (item) => {
+    setIsEditing(true);
+    setEditingItemId(item.id);
+    setNewItem({
+      item_name: item.item_name,
+      category: item.category,
+      quantity: item.quantity.toString(),
+      unit: item.unit,
+      min_threshold: item.min_threshold.toString(),
+      price_per_unit: item.price_per_unit.toString(),
+      currency: item.currency || 'USD',
+    });
+    setShowModal(true);
   };
 
   const handleDelete = async (id) => {
