@@ -29,6 +29,18 @@ const Sensors = ({ onLogout }) => {
     }
   };
 
+  const fetchAIAnalysis = async () => {
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/sensors/ai-analysis`, { language: 'fr' });
+      setAiAnalysis(response.data);
+    } catch (error) {
+      toast.error("Erreur lors de l'analyse IA des capteurs");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="app-container">
       <Sidebar onLogout={onLogout} />
