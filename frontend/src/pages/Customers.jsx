@@ -81,16 +81,52 @@ const Customers = ({ onLogout }) => {
       <Sidebar onLogout={onLogout} />
       <div className="main-content">
         <div className="page-header">
-          <h1>Gestion des Clients (CRM)</h1>
-          <p>Suivi et gestion de la relation clientèle</p>
+          <h1>{language === 'fr' ? 'Gestion des Clients (CRM)' : 'Customer Management (CRM)'}</h1>
+          <p>{language === 'fr' ? 'Suivi et gestion de la relation clientèle' : 'Tracking and managing customer relationships'}</p>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="add-customer-button">
             <Plus size={20} />
-            Ajouter un Client
+            {language === 'fr' ? 'Ajouter un Client' : 'Add Customer'}
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={fetchCustomersAI}
+            disabled={aiLoading}
+            data-testid="customers-ai-button"
+          >
+            {aiLoading
+              ? (language === 'fr' ? 'Analyse IA en cours...' : 'AI analysis in progress...')
+              : (language === 'fr' ? 'Insights IA clients' : 'AI Customer Insights')}
           </button>
         </div>
+
+        {aiAnalysis && (
+          <div className="content-card" style={{ marginBottom: '2rem' }} data-testid="customers-ai-panel">
+            <h2>{language === 'fr' ? 'Analyse IA du portefeuille clients' : 'AI Customer Portfolio Analysis'}</h2>
+            {aiAnalysis.summary && (
+              <p style={{ whiteSpace: 'pre-line', fontSize: '0.9rem', color: '#81c784' }}>
+                {aiAnalysis.summary}
+              </p>
+            )}
+            {aiAnalysis.analysis && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(227, 242, 253, 0.9)',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {aiAnalysis.analysis}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="content-card">
           <h2>Liste des Clients</h2>
