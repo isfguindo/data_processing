@@ -786,6 +786,63 @@ async def get_customers_ai_insights(request: CustomersAIInsightsRequest, current
         *top_lines,
     ]
     customers_summary = "\n".join(summary_lines)
+class EmployeesAIInsightsRequest(BaseModel):
+    language: str = "fr"
+
+
+@api_router.post("/employees/ai-insights")
+async def get_employees_ai_insights(request: EmployeesAIInsightsRequest, current_user: Dict = Depends(get_current_user)):
+    """Analyse IA de la répartition de la charge de travail et des performances du personnel."""
+    employees = await db.users.find({"role": {"$in": ["admin", "manager", "employee"]}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+    tasks = await db.tasks.find({}, {"_id": 0}).to_list(5000)
+
+    if not employees:
+        msg = "Aucun employé enregistré." if request.language == "fr" else "No employees registered."
+        return {"summary": msg, "analysis": None}
+
+    # Créer un petit résumé par employé: nb tâches par statut
+    summary_lines = []
+    for emp in employees:
+        emp_tasks = [t for t in tasks if t.get("assigned_to") == emp.get("id")]
+        pending = sum(1 for t in emp_tasks if t.get("status") == "pending")
+        in_progress = sum(1 for t in emp_tasks if t.get("status") == "in_progress")
+        completed = sum(1 for t in emp_tasks if t.get("status") == "completed")
+        summary_lines.append(
+            f"- {emp['full_name']} ({emp['role']}): pending={pending}, in_progress={in_progress}, completed={completed}"
+        )
+
+    employees_summary = "\n".join(summary_lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"employees-ai-insights-{uuid.uuid4()}",
+        system_message=(
+            "You are an HR and operations planning assistant for an agricultural farm. "
+            "You analyze workload and performance to suggest task reallocation, coaching, and training actions. "
+            "Always respond in " + language_name + "."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            "Based on the following employee task summary, provide: \n"
+            "1) A short analysis of workload balance and potential overloads.\n"
+            "2) Recommendations on how to reassign tasks and which employees should be prioritized for critical tasks.\n"
+            "3) Suggestions for coaching or training (who, on what topics).\n\n"
+            "Employee task summary:\n" + employees_summary
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": employees_summary,
+        "analysis": ai_response,
+    }
+
+
 
     language_name = "French" if request.language == "fr" else "English"
 
