@@ -34,7 +34,19 @@ const Employees = ({ onLogout }) => {
   const fetchEmployeesAI = async () => {
     setAiLoading(true);
     try {
-      const response = await axios.post(`${API}/employees/ai-insights`, { language });
+      const roles = filterRole === 'all' ? null : [filterRole];
+      let since_days = null;
+      if (filterPeriod === '7d') since_days = 7;
+      else if (filterPeriod === '30d') since_days = 30;
+      else if (filterPeriod === '90d') since_days = 90;
+
+      const payload = {
+        language,
+        roles,
+        since_days,
+      };
+
+      const response = await axios.post(`${API}/employees/ai-insights`, payload);
       setAiAnalysis(response.data);
       toast.success(language === 'fr' ? 'Analyse IA du personnel générée' : 'AI staff analysis generated');
     } catch (error) {
