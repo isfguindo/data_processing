@@ -891,7 +891,7 @@ class BackendTester:
     
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting Backend API Tests for IoT Sensor Endpoints and AI Analysis")
+        print("🚀 Starting Backend API Tests for Stock AI Alerts Endpoint")
         print(f"Base URL: {BASE_URL}")
         
         # Setup
@@ -901,15 +901,9 @@ class BackendTester:
             print("❌ Authentication failed, cannot continue with tests")
             return False
         
-        # Run sensor tests (new endpoints)
-        self.test_sensor_devices_creation()
-        self.test_sensor_devices_list()
-        self.test_sensor_readings_ingestion()
-        self.test_sensor_readings_history()
-        self.test_sensor_ai_analysis()
-        
-        # Test existing sensor endpoints
-        self.test_existing_sensor_endpoints()
+        # Run stock AI alerts tests (new endpoint)
+        self.test_stock_ai_alerts_empty_stock()
+        self.test_stock_ai_alerts_with_items()
         
         # Summary
         print("\n" + "="*50)
