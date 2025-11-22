@@ -774,12 +774,13 @@ async def delete_customer(customer_id: str, current_user: Dict = Depends(get_cur
 
 @api_router.get("/employees")
 async def get_employees(current_user: Dict = Depends(get_current_user)):
+    # Inclure tous les rôles pertinents (admin, manager, employee) pour peupler la liste du personnel
     employees = await db.users.find(
-        {"role": {"$in": ["employee", "manager"]}},
+        {"role": {"$in": ["admin", "manager", "employee"]}},
         {"_id": 0, "password_hash": 0}
     ).to_list(1000)
     
-    # Calculate stats for each employee
+    # Calculer quelques statistiques simples pour l'affichage
     for emp in employees:
         tasks = await db.tasks.count_documents({"assigned_to": emp['id'], "status": "completed"})
         emp['tasks_completed'] = tasks
