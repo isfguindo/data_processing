@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getTranslation } from '../locales';
+import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
 const Plants = ({ onLogout }) => {
   const { language } = useLanguage();
