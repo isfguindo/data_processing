@@ -43,6 +43,19 @@ const Plants = ({ onLogout }) => {
     }
   };
 
+  const fetchPlantsAI = async () => {
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/plants/ai-recommendations`, { language });
+      setAiAnalysis(response.data);
+      toast.success(language === 'fr' ? 'Analyse IA des cultures générée' : 'AI crop analysis generated');
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de l'analyse IA des cultures" : 'Error during crop AI analysis');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleAddPlant = async (e) => {
     e.preventDefault();
     try {
