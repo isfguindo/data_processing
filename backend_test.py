@@ -355,6 +355,323 @@ class BackendTester:
         except Exception as e:
             self.log_result("Task Deletion", False, f"Request error: {e}")
     
+    def test_sensor_devices_creation(self):
+        """Test POST /api/sensors/devices endpoint"""
+        print("\n=== Testing sensor device creation ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test different sensor types
+        sensor_types = [
+            {
+                "name": "Capteur Température Air Zone A",
+                "sensor_type": "temperature_air",
+                "location": "Zone A",
+                "unit": "°C",
+                "description": "Capteur de température de l'air"
+            },
+            {
+                "name": "Capteur Humidité Sol Zone B", 
+                "sensor_type": "soil_moisture",
+                "location": "Zone B",
+                "unit": "%",
+                "description": "Capteur d'humidité du sol"
+            },
+            {
+                "name": "Capteur pH Sol Zone C",
+                "sensor_type": "ph_soil", 
+                "location": "Zone C",
+                "unit": "pH"
+            }
+        ]
+        
+        for i, device_data in enumerate(sensor_types):
+            try:
+                response = requests.post(f"{BASE_URL}/sensors/devices", json=device_data, headers=headers)
+                
+                if response.status_code != 200:
+                    self.log_result(f"Sensor Device Creation {i+1}", False, f"HTTP {response.status_code}", response.text)
+                    continue
+                
+                created_device = response.json()
+                
+                # Check required fields in response
+                required_fields = ["id", "name", "sensor_type", "location", "created_at"]
+                missing_fields = [field for field in required_fields if field not in created_device]
+                
+                if missing_fields:
+                    self.log_result(f"Sensor Device {i+1} Response Fields", False, f"Missing fields: {missing_fields}")
+                    continue
+                
+                # Verify created_at is ISO format
+                try:
+                    datetime.fromisoformat(created_device["created_at"].replace('Z', '+00:00'))
+                    iso_valid = True
+                except:
+                    iso_valid = False
+                
+                if not iso_valid:
+                    self.log_result(f"Sensor Device {i+1} ISO Format", False, f"created_at not in ISO format: {created_device['created_at']}")
+                    continue
+                
+                # Store first device ID for later tests
+                if i == 0:
+                    self.created_sensor_device_id = created_device["id"]
+                
+                self.log_result(f"Sensor Device Creation {i+1}", True, f"Device created: {created_device['name']} (ID: {created_device['id']})")
+                
+            except Exception as e:
+                self.log_result(f"Sensor Device Creation {i+1}", False, f"Request error: {e}")
+    
+    def test_sensor_devices_list(self):
+        """Test GET /api/sensors/devices endpoint"""
+        print("\n=== Testing sensor devices list ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        try:
+            response = requests.get(f"{BASE_URL}/sensors/devices", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensor Devices List", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            devices = response.json()
+            
+            if not devices:
+                self.log_result("Sensor Devices List", False, "No devices found (expected at least the created ones)")
+                return
+            
+            self.log_result("Sensor Devices List", True, f"Found {len(devices)} sensor devices")
+            
+            # Verify no MongoDB _id field is present
+            for device in devices:
+                if "_id" in device:
+                    self.log_result("Sensor Devices MongoDB ID", False, "Response contains MongoDB _id field")
+                    return
+            
+            self.log_result("Sensor Devices MongoDB ID", True, "No MongoDB _id fields in response")
+            
+        except Exception as e:
+            self.log_result("Sensor Devices List", False, f"Request error: {e}")
+    
+    def test_sensor_readings_ingestion(self):
+        """Test POST /api/sensors/readings endpoint"""
+        print("\n=== Testing sensor readings ingestion ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        if not self.created_sensor_device_id:
+            self.log_result("Sensor Readings Ingestion", False, "No sensor device ID available for testing")
+            return
+        
+        # Test with valid sensor_id
+        reading_data = {
+            "sensor_id": self.created_sensor_device_id,
+            "value": 23.5
+        }
+        
+        try:
+            response = requests.post(f"{BASE_URL}/sensors/readings", json=reading_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensor Reading Valid ID", False, f"HTTP {response.status_code}", response.text)
+            else:
+                reading_response = response.json()
+                
+                # Check required fields
+                required_fields = ["sensor_id", "sensor_type", "value", "unit", "location", "timestamp"]
+                missing_fields = [field for field in required_fields if field not in reading_response]
+                
+                if missing_fields:
+                    self.log_result("Sensor Reading Response Fields", False, f"Missing fields: {missing_fields}")
+                else:
+                    self.log_result("Sensor Reading Valid ID", True, f"Reading ingested successfully for sensor {self.created_sensor_device_id}")
+            
+        except Exception as e:
+            self.log_result("Sensor Reading Valid ID", False, f"Request error: {e}")
+        
+        # Test with invalid sensor_id (should return 404)
+        invalid_reading_data = {
+            "sensor_id": "non-existent-sensor-id",
+            "value": 25.0
+        }
+        
+        try:
+            response = requests.post(f"{BASE_URL}/sensors/readings", json=invalid_reading_data, headers=headers)
+            
+            if response.status_code == 404:
+                self.log_result("Sensor Reading Invalid ID", True, "Correctly returned 404 for non-existent sensor_id")
+            else:
+                self.log_result("Sensor Reading Invalid ID", False, f"Expected 404, got {response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Sensor Reading Invalid ID", False, f"Request error: {e}")
+    
+    def test_sensor_readings_history(self):
+        """Test GET /api/sensors/readings/{sensor_id} endpoint"""
+        print("\n=== Testing sensor readings history ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        if not self.created_sensor_device_id:
+            self.log_result("Sensor Readings History", False, "No sensor device ID available for testing")
+            return
+        
+        try:
+            response = requests.get(f"{BASE_URL}/sensors/readings/{self.created_sensor_device_id}?limit=10", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensor Readings History", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            readings = response.json()
+            
+            # Should have at least one reading from previous test
+            if not readings:
+                self.log_result("Sensor Readings History", False, "No readings found (expected at least one from ingestion test)")
+                return
+            
+            # Verify all readings belong to the requested sensor
+            for reading in readings:
+                if reading.get("sensor_id") != self.created_sensor_device_id:
+                    self.log_result("Sensor Readings Filtering", False, f"Found reading for different sensor: {reading.get('sensor_id')}")
+                    return
+                
+                # Verify no MongoDB _id field
+                if "_id" in reading:
+                    self.log_result("Sensor Readings MongoDB ID", False, "Response contains MongoDB _id field")
+                    return
+            
+            self.log_result("Sensor Readings History", True, f"Found {len(readings)} readings for sensor {self.created_sensor_device_id}")
+            self.log_result("Sensor Readings Filtering", True, "All readings correctly filtered by sensor_id")
+            self.log_result("Sensor Readings MongoDB ID", True, "No MongoDB _id fields in response")
+            
+        except Exception as e:
+            self.log_result("Sensor Readings History", False, f"Request error: {e}")
+    
+    def test_sensor_ai_analysis(self):
+        """Test POST /api/sensors/ai-analysis endpoint"""
+        print("\n=== Testing sensor AI analysis ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # First, ensure we have some sensor data by calling /api/sensors/current
+        try:
+            current_response = requests.get(f"{BASE_URL}/sensors/current", headers=headers)
+            if current_response.status_code == 200:
+                print("✅ Generated some sensor data for AI analysis")
+            else:
+                print("⚠️  Could not generate sensor data, proceeding with existing data")
+        except:
+            print("⚠️  Error generating sensor data, proceeding with existing data")
+        
+        # Test with French language
+        analysis_request = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/sensors/ai-analysis", json=analysis_request, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensor AI Analysis French", False, f"HTTP {response.status_code}", response.text)
+            else:
+                analysis_response = response.json()
+                
+                # Check required fields
+                if "summary" not in analysis_response or "analysis" not in analysis_response:
+                    self.log_result("Sensor AI Analysis Response Fields", False, f"Missing required fields. Got: {list(analysis_response.keys())}")
+                else:
+                    # Verify summary contains sensor data
+                    summary = analysis_response["summary"]
+                    analysis = analysis_response["analysis"]
+                    
+                    if not summary or not analysis:
+                        self.log_result("Sensor AI Analysis Content", False, "Summary or analysis is empty")
+                    else:
+                        self.log_result("Sensor AI Analysis French", True, f"AI analysis completed successfully (summary: {len(summary)} chars, analysis: {len(analysis)} chars)")
+                        
+                        # Check if response is in French (basic check)
+                        french_indicators = ["température", "humidité", "capteur", "recommand", "irrigation", "sol"]
+                        has_french = any(indicator in analysis.lower() for indicator in french_indicators)
+                        
+                        if has_french:
+                            self.log_result("Sensor AI Analysis Language", True, "Response appears to be in French")
+                        else:
+                            self.log_result("Sensor AI Analysis Language", False, "Response may not be in French as requested")
+                
+        except Exception as e:
+            self.log_result("Sensor AI Analysis French", False, f"Request error: {e}")
+        
+        # Test with English language
+        analysis_request_en = {"language": "en"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/sensors/ai-analysis", json=analysis_request_en, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensor AI Analysis English", False, f"HTTP {response.status_code}", response.text)
+            else:
+                analysis_response = response.json()
+                
+                if "summary" in analysis_response and "analysis" in analysis_response:
+                    self.log_result("Sensor AI Analysis English", True, "AI analysis completed successfully in English")
+                else:
+                    self.log_result("Sensor AI Analysis English", False, "Missing required fields in response")
+                
+        except Exception as e:
+            self.log_result("Sensor AI Analysis English", False, f"Request error: {e}")
+    
+    def test_existing_sensor_endpoints(self):
+        """Test existing sensor endpoints to ensure they still work"""
+        print("\n=== Testing existing sensor endpoints ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test /api/sensors/current
+        try:
+            response = requests.get(f"{BASE_URL}/sensors/current", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensors Current Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                current_sensors = response.json()
+                
+                if not current_sensors:
+                    self.log_result("Sensors Current Data", False, "No sensor data returned")
+                else:
+                    # Verify no MongoDB _id fields
+                    has_mongo_id = any("_id" in sensor for sensor in current_sensors)
+                    
+                    if has_mongo_id:
+                        self.log_result("Sensors Current MongoDB ID", False, "Response contains MongoDB _id field")
+                    else:
+                        self.log_result("Sensors Current Endpoint", True, f"Current sensors endpoint working, returned {len(current_sensors)} sensors")
+                        self.log_result("Sensors Current MongoDB ID", True, "No MongoDB _id fields in response")
+                
+        except Exception as e:
+            self.log_result("Sensors Current Endpoint", False, f"Request error: {e}")
+        
+        # Test /api/sensors/history
+        try:
+            response = requests.get(f"{BASE_URL}/sensors/history?sensor_type=temperature&limit=10", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensors History Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                history_sensors = response.json()
+                
+                # Verify no MongoDB _id fields
+                has_mongo_id = any("_id" in sensor for sensor in history_sensors)
+                
+                if has_mongo_id:
+                    self.log_result("Sensors History MongoDB ID", False, "Response contains MongoDB _id field")
+                else:
+                    self.log_result("Sensors History Endpoint", True, f"History sensors endpoint working, returned {len(history_sensors)} sensors")
+                    self.log_result("Sensors History MongoDB ID", True, "No MongoDB _id fields in response")
+                
+        except Exception as e:
+            self.log_result("Sensors History Endpoint", False, f"Request error: {e}")
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for Tasks and Employees")
