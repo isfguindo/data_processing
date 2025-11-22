@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '../App';
 import Sidebar from '../components/Sidebar';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, Edit, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Stock = ({ onLogout }) => {
