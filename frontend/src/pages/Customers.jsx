@@ -39,6 +39,19 @@ const Customers = ({ onLogout }) => {
     }
   };
 
+  const fetchCustomersAI = async () => {
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/customers/ai-insights`, { language });
+      setAiAnalysis(response.data);
+      toast.success(language === 'fr' ? 'Insights IA clients générés' : 'AI customer insights generated');
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de l'analyse IA clients" : 'Error during customer AI insights');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleAddCustomer = async (e) => {
     e.preventDefault();
     try {
