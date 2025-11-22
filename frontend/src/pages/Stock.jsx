@@ -238,6 +238,18 @@ const Stock = ({ onLogout }) => {
                 {aiAnalysis.recommendations}
               </div>
             )}
+
+            {aiAnalysis.recommendations && (
+              <div style={{ marginTop: '1rem' }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={handlePreviewTasksFromAI}
+                  style={{ fontSize: '0.875rem' }}
+                >
+                  {language === 'fr' ? 'Créer des tâches IA' : 'Create AI Tasks'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
