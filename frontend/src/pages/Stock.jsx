@@ -86,6 +86,53 @@ const Stock = ({ onLogout }) => {
     try {
       await axios.put(`${API}/stock/${editingItemId}`, {
         item_name: newItem.item_name,
+  const handlePreviewTasksFromAI = async () => {
+    if (!aiAnalysis || !aiAnalysis.recommendations) {
+      toast.error(language === 'fr' ? "Aucune recommandation IA disponible" : 'No AI recommendations available');
+      return;
+    }
+    try {
+      const payload = {
+        language,
+        source: 'stock',
+        ai_text: aiAnalysis.recommendations,
+      };
+      const response = await axios.post(`${API}/tasks/from-ai/preview`, payload);
+      setAiTasksPreview(response.data || []);
+      if ((response.data || []).length === 0) {
+        toast.error(language === 'fr' ? "Aucune tâche proposée par l'IA" : 'No tasks suggested by AI');
+        return;
+      }
+      setShowAiTasksModal(true);
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de la génération des tâches IA" : 'Error while generating AI tasks');
+    }
+  };
+
+  const handleConfirmAITasks = async () => {
+    if (!aiTasksPreview || aiTasksPreview.length === 0) {
+      setShowAiTasksModal(false);
+      return;
+    }
+    setCreatingTasks(true);
+    try {
+      const response = await axios.post(`${API}/tasks/from-ai/confirm`, aiTasksPreview);
+      const created = response.data || [];
+      toast.success(
+        language === 'fr'
+          ? `${created.length} tâche(s) IA créée(s).`
+          : `${created.length} AI task(s) created.`,
+      );
+      setShowAiTasksModal(false);
+      setAiTasksPreview([]);
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de la création des tâches IA" : 'Error while creating AI tasks');
+    } finally {
+      setCreatingTasks(false);
+    }
+  };
+
+
         category: newItem.category,
         quantity: parseFloat(newItem.quantity),
         unit: newItem.unit,
