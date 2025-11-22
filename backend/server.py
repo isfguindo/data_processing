@@ -453,12 +453,6 @@ async def get_sensor_ai_analysis(request: SensorAIAnalysisRequest, current_user:
         "analysis": ai_response,
     }
 
-
-        sensor_dict['timestamp'] = sensor_dict['timestamp'].isoformat()
-        await db.sensor_data.insert_one(sensor_dict)
-    
-    return [s.model_dump() for s in sensor_data]
-
 @api_router.get("/sensors/history")
 async def get_sensor_history(sensor_type: str, limit: int = 100, current_user: Dict = Depends(get_current_user)):
     sensors = await db.sensor_data.find(
