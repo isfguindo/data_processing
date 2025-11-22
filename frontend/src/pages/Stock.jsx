@@ -438,6 +438,70 @@ const Stock = ({ onLogout }) => {
             </div>
           </div>
         )}
+
+        {showAiTasksModal && (
+          <div style={modalStyles.overlay} onClick={() => setShowAiTasksModal(false)}>
+            <div style={modalStyles.modal} onClick={(e) => e.stopPropagation()}>
+              <h2 style={modalStyles.title}>
+                {language === 'fr' ? 'Tâches IA Proposées' : 'Proposed AI Tasks'}
+              </h2>
+              
+              {aiTasksPreview.length === 0 ? (
+                <p>{language === 'fr' ? 'Aucune tâche proposée.' : 'No tasks proposed.'}</p>
+              ) : (
+                <div>
+                  <p style={{ marginBottom: '1rem', color: '#666' }}>
+                    {language === 'fr' 
+                      ? `${aiTasksPreview.length} tâche(s) seront créées :`
+                      : `${aiTasksPreview.length} task(s) will be created:`
+                    }
+                  </p>
+                  <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1.5rem' }}>
+                    {aiTasksPreview.map((task, index) => (
+                      <div key={index} style={{
+                        padding: '0.75rem',
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        marginBottom: '0.5rem',
+                        backgroundColor: '#f9f9f9'
+                      }}>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>{task.title}</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#666' }}>{task.description}</p>
+                        <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
+                          <span>Priorité: {task.priority}</span>
+                          {task.due_date && <span> • Échéance: {new Date(task.due_date).toLocaleDateString()}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowAiTasksModal(false)}
+                >
+                  {language === 'fr' ? 'Annuler' : 'Cancel'}
+                </button>
+                {aiTasksPreview.length > 0 && (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary" 
+                    onClick={handleConfirmAITasks}
+                    disabled={creatingTasks}
+                  >
+                    {creatingTasks 
+                      ? (language === 'fr' ? 'Création...' : 'Creating...')
+                      : (language === 'fr' ? 'Créer les tâches' : 'Create Tasks')
+                    }
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
