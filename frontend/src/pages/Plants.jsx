@@ -50,7 +50,36 @@ const Plants = ({ onLogout }) => {
   const fetchPlantsAI = async () => {
     setAiLoading(true);
     try {
-      const response = await axios.post(`${API}/plants/ai-recommendations`, { language });
+      // Construire les filtres pour le backend
+      const plantTypes = filterType === 'all' ? null : [filterType];
+      const statusesMap = {
+        all: null,
+        healthy: ['healthy'],
+        sick: ['sick'],
+        treated: ['treated'],
+      };
+      const statuses = statusesMap[filterStatus] || null;
+
+      let from_date = null;
+      let to_date = null;
+      if (filterPeriod !== 'all') {
+        const now = new Date();
+        const days = filterPeriod === '30d' ? 30 : filterPeriod === '90d' ? 90 : 0;
+        if (days > 0) {
+          const from = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+          from_date = from.toISOString().slice(0, 10);
+        }
+      }
+
+      const payload = {
+        language,
+        plant_types: plantTypes,
+        statuses,
+        from_date,
+        to_date,
+      };
+
+      const response = await axios.post(`${API}/plants/ai-recommendations`, payload);
       setAiAnalysis(response.data);
       toast.success(language === 'fr' ? 'Analyse IA des cultures générée' : 'AI crop analysis generated');
     } catch (error) {
