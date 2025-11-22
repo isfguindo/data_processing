@@ -752,9 +752,6 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
         "recommendations": ai_response,
     }
 
-
-        await db.irrigation.insert_one(schedule_dict)
-    
     # Record trigger
     trigger = AutoIrrigationTrigger(
         triggered_by="auto" if settings.get('enabled') else "manual",
