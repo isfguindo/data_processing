@@ -47,9 +47,47 @@ const Employees = ({ onLogout }) => {
       <Sidebar onLogout={onLogout} />
       <div className="main-content">
         <div className="page-header">
-          <h1>Gestion du Personnel</h1>
-          <p>Suivi des employés et de leurs performances</p>
+          <h1>{language === 'fr' ? 'Gestion du Personnel' : 'Staff Management'}</h1>
+          <p>{language === 'fr' ? 'Suivi des employés et de leurs performances' : 'Tracking employees and their performance'}</p>
         </div>
+
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={fetchEmployeesAI}
+            disabled={aiLoading}
+            data-testid="employees-ai-button"
+          >
+            {aiLoading
+              ? (language === 'fr' ? 'Analyse IA en cours...' : 'AI analysis in progress...')
+              : (language === 'fr' ? 'Analyse IA du personnel' : 'AI Staff Analysis')}
+          </button>
+        </div>
+
+        {aiAnalysis && (
+          <div className="content-card" style={{ marginBottom: '2rem' }} data-testid="employees-ai-panel">
+            <h2>{language === 'fr' ? 'Analyse IA de la charge de travail' : 'AI Workload Analysis'}</h2>
+            {aiAnalysis.summary && (
+              <p style={{ whiteSpace: 'pre-line', fontSize: '0.9rem', color: '#81c784' }}>
+                {aiAnalysis.summary}
+              </p>
+            )}
+            {aiAnalysis.analysis && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(232, 245, 233, 0.9)',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {aiAnalysis.analysis}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="content-card">
           <h2>Liste du Personnel</h2>
