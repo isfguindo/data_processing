@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Tester spécifiquement les endpoints backend liés aux tâches et employés"
+user_problem_statement: "Tester les nouveaux endpoints backend liés aux capteurs IoT réels et à l'IA, en plus de vérifier que les anciens endpoints capteurs restent fonctionnels"
 
 backend:
   - task: "Employee Endpoint API"
