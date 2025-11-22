@@ -15,6 +15,8 @@ const Customers = ({ onLogout }) => {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState('all');
+  const [filterPeriod, setFilterPeriod] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
