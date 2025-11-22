@@ -101,3 +101,110 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Tester spécifiquement les endpoints backend liés aux tâches et employés"
+
+backend:
+  - task: "Employee Endpoint API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ /api/employees endpoint working correctly. Returns non-empty list of employees (3 found) with all required fields: id, full_name, email, role, tasks_completed, performance_score. All field types validated successfully."
+
+  - task: "Tasks Endpoint API - Admin Access"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ /api/tasks endpoint working correctly for admin users. Admin can access all tasks in the system as expected. Role-based access control functioning properly."
+
+  - task: "Tasks Endpoint API - Employee Access"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ /api/tasks endpoint working correctly for employee users. Employee users only see tasks assigned to them (assigned_to = user_id). Task filtering logic working as expected."
+
+  - task: "Task Creation API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/tasks working correctly. Successfully creates tasks with valid JSON body (title, description, assigned_to, priority, due_date). Response contains generated ID and all sent fields. Task properly stored in database and verified."
+
+  - task: "Task Status Update API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ PUT /api/tasks/{task_id}?status=in_progress working correctly. Task status field properly updated in database. Verification confirmed status change from 'pending' to 'in_progress'."
+
+  - task: "Task Deletion API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ DELETE /api/tasks/{task_id} working correctly. Task successfully removed from database. Verification confirmed task no longer exists after deletion."
+
+  - task: "JWT Authentication System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ JWT authentication working correctly. Both admin and employee users can authenticate via /api/auth/login. Tokens properly generated and accepted for API access."
+
+frontend:
+  # Frontend testing not performed as per instructions
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "All backend tasks completed successfully"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "testing"
+      message: "Comprehensive backend testing completed for tasks and employees endpoints. All 15 tests passed with 100% success rate. Key findings: 1) /api/employees returns proper employee data with all required fields, 2) /api/tasks correctly implements role-based access (admin sees all, employee sees only assigned), 3) Task CRUD operations (create, update status, delete) all working correctly, 4) JWT authentication functioning properly. No critical issues found. Backend APIs are fully functional and ready for production use."
