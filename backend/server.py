@@ -726,6 +726,69 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
             "2) Concrete recommendations: which products to restock first, approximate quantities, "
             "and possible substitutions. Respond in English.\n\n"
         )
+class PlantAIRecommendationsRequest(BaseModel):
+    language: str = "fr"
+
+
+@api_router.post("/plants/ai-recommendations")
+async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, current_user: Dict = Depends(get_current_user)):
+    """Analyse globale des cultures avec estimation de risques et recommandations opérationnelles.
+
+    Retourne une structure textuelle incluant :
+    - Résumé global de l'état des cultures
+    - Estimation de risques chiffrés (0-100) : maladies, stress hydrique, carences nutritives
+    - Liste de recommandations de tâches concrètes
+    """
+    plants = await db.plants.find({}, {"_id": 0}).to_list(1000)
+
+    if not plants:
+        msg = "Aucune plante enregistrée dans le système." if request.language == "fr" else "No plants registered in the system."
+        return {"summary": msg, "analysis": None}
+
+    # Regrouper par type et statut
+    summary_by_type = {}
+    for p in plants:
+        ptype = p.get("plant_type", "unknown")
+        status = p.get("status", "unknown")
+        key = f"{ptype}|{status}"
+        summary_by_type[key] = summary_by_type.get(key, 0) + 1
+
+    lines = []
+    for key, count in summary_by_type.items():
+        ptype, status = key.split("|")
+        lines.append(f"- {ptype} ({status}): {count} plante(s)")
+
+    plants_summary = "\n".join(lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"plants-ai-reco-{uuid.uuid4()}",
+        system_message=(
+            "You are an agronomic AI assistant. You analyze crop status and propose both risk indices "
+            "and concrete operational actions for the coming days. Always respond in " + language_name + "."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            "Analyze the following crop status and provide: \n"
+            "1) Numerical risk indices between 0 and 100 for: disease_risk, water_stress, nutrient_deficiency_risk.\n"
+            "2) A concise summary (3-4 sentences) of the overall situation.\n"
+            "3) A prioritized list of actionable tasks for the next 7 days (inspection, treatment, irrigation, fertilization, pruning, etc.).\n\n"
+            "Crop summary by type and status:\n" + plants_summary
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": plants_summary,
+        "analysis": ai_response,
+    }
+
+
 
     prompt += "CRITICAL ITEMS (below minimum threshold):\n" + (critical_summary or "None") + "\n\n"
     prompt += "WARNING ITEMS (close to minimum threshold):\n" + (warning_summary or "None")
