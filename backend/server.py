@@ -891,6 +891,7 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
             prompt += f"Warning items (approaching threshold):\n{warning_summary}\n\n"
 
     language_name = "French" if request.language == "fr" else "English"
+ench" if request.language == "fr" else "English"
 
     chat = LlmChat(
         api_key=EMERGENT_LLM_KEY,
