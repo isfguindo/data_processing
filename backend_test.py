@@ -672,6 +672,223 @@ class BackendTester:
         except Exception as e:
             self.log_result("Sensors History Endpoint", False, f"Request error: {e}")
     
+    def test_stock_ai_alerts_empty_stock(self):
+        """Test /api/stock/ai-alerts with empty stock or all levels OK"""
+        print("\n=== Testing stock AI alerts with empty/OK stock ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # First, clear any existing stock items to ensure clean test
+        try:
+            # Get existing stock items
+            get_response = requests.get(f"{BASE_URL}/stock", headers=headers)
+            if get_response.status_code == 200:
+                existing_items = get_response.json()
+                # Delete existing items for clean test
+                for item in existing_items:
+                    requests.delete(f"{BASE_URL}/stock/{item['id']}", headers=headers)
+        except:
+            pass  # Ignore errors, proceed with test
+        
+        # Test with French language
+        alert_request = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/stock/ai-alerts", json=alert_request, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Stock AI Alerts Empty (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            alert_response = response.json()
+            
+            # Check required fields
+            required_fields = ["critical_items", "warning_items", "summary", "recommendations"]
+            missing_fields = [field for field in required_fields if field not in alert_response]
+            
+            if missing_fields:
+                self.log_result("Stock AI Alerts Response Fields", False, f"Missing fields: {missing_fields}")
+                return
+            
+            # Verify empty arrays for critical and warning items
+            if alert_response["critical_items"] != []:
+                self.log_result("Stock AI Alerts Critical Items Empty", False, f"Expected empty array, got: {alert_response['critical_items']}")
+                return
+            
+            if alert_response["warning_items"] != []:
+                self.log_result("Stock AI Alerts Warning Items Empty", False, f"Expected empty array, got: {alert_response['warning_items']}")
+                return
+            
+            # Verify summary is non-empty
+            if not alert_response["summary"]:
+                self.log_result("Stock AI Alerts Summary Non-Empty", False, "Summary should be non-empty")
+                return
+            
+            # Verify recommendations is empty string
+            if alert_response["recommendations"] != "":
+                self.log_result("Stock AI Alerts Recommendations Empty", False, f"Expected empty string, got: {alert_response['recommendations']}")
+                return
+            
+            self.log_result("Stock AI Alerts Empty (FR)", True, "Empty stock case handled correctly with French language")
+            
+        except Exception as e:
+            self.log_result("Stock AI Alerts Empty (FR)", False, f"Request error: {e}")
+    
+    def test_stock_ai_alerts_with_items(self):
+        """Test /api/stock/ai-alerts with critical and warning items"""
+        print("\n=== Testing stock AI alerts with critical and warning items ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Create test stock items with different levels
+        test_items = [
+            {
+                "item_name": "Graines de Tomates",
+                "category": "seeds",
+                "quantity": 5.0,  # Critical: <= min_threshold (10)
+                "unit": "kg",
+                "min_threshold": 10.0,
+                "price_per_unit": 25.0,
+                "currency": "EUR"
+            },
+            {
+                "item_name": "Engrais NPK",
+                "category": "fertilizers", 
+                "quantity": 11.0,  # Warning: > min_threshold but <= 1.2 * min_threshold (12)
+                "unit": "kg",
+                "min_threshold": 10.0,
+                "price_per_unit": 15.0,
+                "currency": "EUR"
+            },
+            {
+                "item_name": "Pesticide Bio",
+                "category": "pesticides",
+                "quantity": 2.0,  # Critical: <= min_threshold (8)
+                "unit": "L",
+                "min_threshold": 8.0,
+                "price_per_unit": 45.0,
+                "currency": "EUR"
+            },
+            {
+                "item_name": "Outils de Jardinage",
+                "category": "tools",
+                "quantity": 25.0,  # OK: > 1.2 * min_threshold (24)
+                "unit": "pieces",
+                "min_threshold": 20.0,
+                "price_per_unit": 12.0,
+                "currency": "EUR"
+            }
+        ]
+        
+        created_item_ids = []
+        
+        # Create the test items
+        for item_data in test_items:
+            try:
+                response = requests.post(f"{BASE_URL}/stock", json=item_data, headers=headers)
+                if response.status_code == 200:
+                    created_item = response.json()
+                    created_item_ids.append(created_item["id"])
+                    print(f"✅ Created test item: {item_data['item_name']}")
+                else:
+                    print(f"⚠️  Failed to create test item: {item_data['item_name']}")
+            except Exception as e:
+                print(f"⚠️  Error creating test item {item_data['item_name']}: {e}")
+        
+        # Test with French language
+        alert_request = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/stock/ai-alerts", json=alert_request, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Stock AI Alerts With Items (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            alert_response = response.json()
+            
+            # Verify critical items (should have 2: Graines de Tomates and Pesticide Bio)
+            critical_items = alert_response.get("critical_items", [])
+            expected_critical = 2
+            
+            if len(critical_items) != expected_critical:
+                self.log_result("Stock AI Alerts Critical Count", False, f"Expected {expected_critical} critical items, got {len(critical_items)}")
+            else:
+                self.log_result("Stock AI Alerts Critical Count", True, f"Correctly identified {expected_critical} critical items")
+            
+            # Verify warning items (should have 1: Engrais NPK)
+            warning_items = alert_response.get("warning_items", [])
+            expected_warning = 1
+            
+            if len(warning_items) != expected_warning:
+                self.log_result("Stock AI Alerts Warning Count", False, f"Expected {expected_warning} warning items, got {len(warning_items)}")
+            else:
+                self.log_result("Stock AI Alerts Warning Count", True, f"Correctly identified {expected_warning} warning items")
+            
+            # Verify no MongoDB _id fields
+            all_items = critical_items + warning_items
+            has_mongo_id = any("_id" in item for item in all_items)
+            
+            if has_mongo_id:
+                self.log_result("Stock AI Alerts MongoDB ID", False, "Response contains MongoDB _id field")
+            else:
+                self.log_result("Stock AI Alerts MongoDB ID", True, "No MongoDB _id fields in response")
+            
+            # Verify recommendations are provided (should be non-empty)
+            recommendations = alert_response.get("recommendations", "")
+            if not recommendations:
+                self.log_result("Stock AI Alerts Recommendations", False, "Recommendations should be non-empty when there are critical/warning items")
+            else:
+                self.log_result("Stock AI Alerts Recommendations", True, f"AI recommendations provided ({len(recommendations)} characters)")
+                
+                # Check if response is in French (basic check)
+                french_indicators = ["stock", "réapprovision", "recommand", "critique", "seuil", "rupture"]
+                has_french = any(indicator in recommendations.lower() for indicator in french_indicators)
+                
+                if has_french:
+                    self.log_result("Stock AI Alerts Language (FR)", True, "Recommendations appear to be in French")
+                else:
+                    self.log_result("Stock AI Alerts Language (FR)", False, "Recommendations may not be in French as requested")
+            
+        except Exception as e:
+            self.log_result("Stock AI Alerts With Items (FR)", False, f"Request error: {e}")
+        
+        # Test with English language
+        alert_request_en = {"language": "en"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/stock/ai-alerts", json=alert_request_en, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Stock AI Alerts With Items (EN)", False, f"HTTP {response.status_code}", response.text)
+            else:
+                alert_response = response.json()
+                recommendations = alert_response.get("recommendations", "")
+                
+                if recommendations:
+                    # Check if response is in English (basic check)
+                    english_indicators = ["stock", "restock", "recommend", "critical", "threshold", "shortage"]
+                    has_english = any(indicator in recommendations.lower() for indicator in english_indicators)
+                    
+                    if has_english:
+                        self.log_result("Stock AI Alerts Language (EN)", True, "Recommendations appear to be in English")
+                    else:
+                        self.log_result("Stock AI Alerts Language (EN)", False, "Recommendations may not be in English as requested")
+                    
+                    self.log_result("Stock AI Alerts With Items (EN)", True, "English language request handled correctly")
+                else:
+                    self.log_result("Stock AI Alerts With Items (EN)", False, "No recommendations provided for English request")
+                
+        except Exception as e:
+            self.log_result("Stock AI Alerts With Items (EN)", False, f"Request error: {e}")
+        
+        # Cleanup: Delete created test items
+        for item_id in created_item_ids:
+            try:
+                requests.delete(f"{BASE_URL}/stock/{item_id}", headers=headers)
+            except:
+                pass  # Ignore cleanup errors
+    
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for IoT Sensor Endpoints and AI Analysis")
