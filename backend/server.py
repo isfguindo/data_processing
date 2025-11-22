@@ -526,7 +526,7 @@ async def confirm_tasks_from_ai(
 
     if not recent_readings:
         msg = "Aucune donnée de capteur disponible pour l'analyse" if request.language == "fr" else "No sensor data available for analysis"
-        return {"message": msg, "recommendations": None}
+        return {"message": msg, "recommendations": None, "indices": None}
 
     # Build a compact summary by type
     summary_by_type: Dict[str, list] = {}
@@ -543,6 +543,42 @@ async def confirm_tasks_from_ai(
 
     sensor_summary = "\n".join(sensor_summary_lines)
 
+    # Calcul d'indices simples à partir des capteurs
+    def avg(values: List[float]) -> Optional[float]:
+        return sum(values) / len(values) if values else None
+
+    temp_values = [r["value"] for r in recent_readings if r.get("sensor_type") == "temperature"]
+    humidity_values = [r["value"] for r in recent_readings if r.get("sensor_type") in ("humidity", "soil_moisture")]
+    ph_values = [r["value"] for r in recent_readings if r.get("sensor_type") == "ph"]
+
+    avg_temp = avg(temp_values)
+    avg_humidity = avg(humidity_values)
+    avg_ph = avg(ph_values)
+
+    # Heuristiques basiques
+    water_stress = 50.0
+    if avg_temp is not None and avg_humidity is not None:
+        water_stress = min(100.0, max(0.0, (avg_temp - 20) * 3 + (60 - avg_humidity)))
+
+    disease_risk = 30.0
+    if avg_humidity is not None:
+        # forte humidité => risque plus élevé
+        disease_risk = min(100.0, max(0.0, (avg_humidity - 50) * 1.5))
+
+    nutrient_issue_risk = 50.0
+    if avg_ph is not None:
+        deviation = abs(avg_ph - 6.5)
+        nutrient_issue_risk = min(100.0, deviation * 20)
+
+    pest_pressure = 30.0  # placeholder simple, pourra être affiné avec données caméra/drones
+
+    indices = {
+        "water_stress": round(water_stress, 1),
+        "disease_risk": round(disease_risk, 1),
+        "nutrient_issue_risk": round(nutrient_issue_risk, 1),
+        "pest_pressure": round(pest_pressure, 1),
+    }
+
     language_name = "French" if request.language == "fr" else "English"
 
     chat = LlmChat(
@@ -557,10 +593,10 @@ async def confirm_tasks_from_ai(
 
     message = UserMessage(
         text=(
-            f"Analyze the following aggregated sensor data and provide both: \n"
-            f"1) Numerical indices between 0 and 100 for: water_stress, disease_risk, nutrient_issue_risk, pest_pressure.\n"
-            f"2) Concise textual recommendations for irrigation, fertilization and pest/animal control.\n"
-            f"Respond in {language_name}.\n\n"
+            "Analyze the following aggregated sensor data and the pre-computed risk indices, and provide: \n"
+            "1) A concise explanation of the indices (water_stress, disease_risk, nutrient_issue_risk, pest_pressure).\n"
+            "2) Clear recommendations for irrigation, fertilization and pest/animal control.\n\n"
+            f"Current risk indices (0-100): water_stress={indices['water_stress']}, disease_risk={indices['disease_risk']}, nutrient_issue_risk={indices['nutrient_issue_risk']}, pest_pressure={indices['pest_pressure']}.\n\n"
             f"Sensor summary (by type and average value):\n{sensor_summary}"
         )
     )
@@ -570,6 +606,7 @@ async def confirm_tasks_from_ai(
     return {
         "summary": sensor_summary,
         "analysis": ai_response,
+        "indices": indices,
     }
 
 @api_router.get("/sensors/history")
