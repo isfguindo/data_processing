@@ -224,6 +224,21 @@ class AutoIrrigationTrigger(BaseModel):
     ai_recommendation: str
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+
+
+class AITaskSuggestion(BaseModel):
+    title: str
+    description: str
+    priority: str = "medium"
+    due_in_days: int = 7
+
+
+class AITaskGenerationRequest(BaseModel):
+    language: str = "fr"
+    source: str  # plants, stock, customers, employees, sensors, general
+    ai_text: str
+
+
 class AIRecommendation(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
