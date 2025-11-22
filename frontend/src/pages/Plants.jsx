@@ -258,6 +258,58 @@ const Plants = ({ onLogout }) => {
         {aiAnalysis && (
           <div className="content-card" style={{ marginBottom: '2rem' }} data-testid="plants-ai-panel">
             <h2>{language === 'fr' ? 'Analyse IA globale des cultures' : 'Global AI Crop Analysis'}</h2>
+
+            {/* Jauges circulaires pour les indices de risque */}
+            {aiAnalysis.indices && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1rem' }}>
+                {['disease_risk', 'water_stress', 'nutrient_deficiency_risk'].map((key) => {
+                  const value = aiAnalysis.indices[key];
+                  if (value === undefined || value === null) return null;
+                  const labelMap = {
+                    disease_risk: language === 'fr' ? 'Risque maladie' : 'Disease risk',
+                    water_stress: language === 'fr' ? 'Stress hydrique' : 'Water stress',
+                    nutrient_deficiency_risk: language === 'fr' ? 'Risque carence' : 'Nutrient risk',
+                  };
+                  const displayValue = Number(value) || 0;
+                  const chartData = [{ name: key, value: displayValue, fill: '#2e7d32' }];
+                  return (
+                    <div key={key} style={{ width: 140, height: 140, textAlign: 'center' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadialBarChart
+                          cx="50%"
+                          cy="50%"
+                          innerRadius="60%"
+                          outerRadius="90%"
+                          barSize={10}
+                          data={chartData}
+                          startAngle={220}
+                          endAngle={-40}
+                        >
+                          <PolarAngleAxis
+                            type="number"
+                            domain={[0, 100]}
+                            dataKey="value"
+                            tick={false}
+                          />
+                          <RadialBar
+                            background
+                            dataKey="value"
+                            cornerRadius={100}
+                          />
+                        </RadialBarChart>
+                      </ResponsiveContainer>
+                      <div style={{ marginTop: '-2.2rem', fontWeight: 700, color: '#1b5e20', fontSize: '0.9rem' }}>
+                        {displayValue.toFixed(1)}%
+                      </div>
+                      <div style={{ fontSize: '0.8rem', marginTop: '0.25rem', color: '#558b2f' }}>
+                        {labelMap[key]}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {aiAnalysis.summary && (
               <p style={{ whiteSpace: 'pre-line', fontSize: '0.9rem', color: '#81c784' }}>
                 <strong>{language === 'fr' ? 'Résumé des cultures :' : 'Crop summary:'}</strong>{'\n'}
