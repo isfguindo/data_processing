@@ -331,6 +331,120 @@ async def get_current_sensors(current_user: Dict = Depends(get_current_user)):
     # Save to database
     for sensor in sensor_data:
         sensor_dict = sensor.model_dump()
+# ==================== SENSOR DEVICES & REAL DATA ROUTES ====================
+
+@api_router.post("/sensors/devices")
+async def create_sensor_device(device: SensorDevice, current_user: Dict = Depends(get_current_user)):
+    device_dict = device.model_dump()
+    device_dict["created_at"] = device_dict["created_at"].isoformat()
+    await db.sensor_devices.insert_one(device_dict)
+    device_dict.pop("_id", None)
+    return device_dict
+
+
+@api_router.get("/sensors/devices")
+async def list_sensor_devices(current_user: Dict = Depends(get_current_user)):
+    devices = await db.sensor_devices.find({}, {"_id": 0}).to_list(1000)
+    return devices
+
+
+class SensorReadingIn(BaseModel):
+    sensor_id: str
+    value: float
+    timestamp: Optional[datetime] = None
+
+
+@api_router.post("/sensors/readings")
+async def ingest_sensor_reading(reading: SensorReadingIn, current_user: Dict = Depends(get_current_user)):
+    # Find the corresponding device to infer type/unit/location
+    device = await db.sensor_devices.find_one({"id": reading.sensor_id}, {"_id": 0})
+    if not device:
+        raise HTTPException(status_code=404, detail="Sensor device not found")
+
+    sensor_data = SensorData(
+        sensor_id=reading.sensor_id,
+        sensor_type=device.get("sensor_type", "unknown"),
+        value=reading.value,
+        unit=device.get("unit", ""),
+        location=device.get("location", "Main Field"),
+        timestamp=reading.timestamp or datetime.now(timezone.utc)
+    )
+
+    sensor_dict = sensor_data.model_dump()
+    sensor_dict["timestamp"] = sensor_dict["timestamp"].isoformat()
+    await db.sensor_data.insert_one(sensor_dict)
+    sensor_dict.pop("_id", None)
+    return sensor_dict
+
+
+@api_router.get("/sensors/readings/{sensor_id}")
+async def get_sensor_readings(sensor_id: str, limit: int = 100, current_user: Dict = Depends(get_current_user)):
+    readings = await db.sensor_data.find(
+        {"sensor_id": sensor_id},
+        {"_id": 0}
+    ).sort("timestamp", -1).limit(limit).to_list(limit)
+    return readings
+
+
+class SensorAIAnalysisRequest(BaseModel):
+    language: str = "fr"
+
+
+@api_router.post("/sensors/ai-analysis")
+async def get_sensor_ai_analysis(request: SensorAIAnalysisRequest, current_user: Dict = Depends(get_current_user)):
+    """Provide AI-based recommendations and indices based on recent real sensor data."""
+    # Fetch recent readings grouped by type
+    recent_readings = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(50).to_list(50)
+
+    if not recent_readings:
+        msg = "Aucune donnée de capteur disponible pour l'analyse" if request.language == "fr" else "No sensor data available for analysis"
+        return {"message": msg, "recommendations": None}
+
+    # Build a compact summary by type
+    summary_by_type: Dict[str, list] = {}
+    for r in recent_readings:
+        t = r.get("sensor_type", "unknown")
+        summary_by_type.setdefault(t, []).append(r.get("value"))
+
+    sensor_summary_lines = []
+    for t, values in summary_by_type.items():
+        if not values:
+            continue
+        avg = sum(values) / len(values)
+        sensor_summary_lines.append(f"{t}: moyenne {avg:.2f} ({len(values)} mesures)")
+
+    sensor_summary = "\n".join(sensor_summary_lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"sensor-ai-analysis-{uuid.uuid4()}",
+        system_message=(
+            "You are an agricultural IoT assistant. You analyze multi-sensor data "
+            "(air temperature & humidity, soil moisture, soil pH, sunlight, cameras, drones) "
+            "and provide both numerical risk indices and textual recommendations."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            f"Analyze the following aggregated sensor data and provide both: \n"
+            f"1) Numerical indices between 0 and 100 for: water_stress, disease_risk, nutrient_issue_risk, pest_pressure.\n"
+            f"2) Concise textual recommendations for irrigation, fertilization and pest/animal control.\n"
+            f"Respond in {language_name}.\n\n"
+            f"Sensor summary (by type and average value):\n{sensor_summary}"
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": sensor_summary,
+        "analysis": ai_response,
+    }
+
+
         sensor_dict['timestamp'] = sensor_dict['timestamp'].isoformat()
         await db.sensor_data.insert_one(sensor_dict)
     
