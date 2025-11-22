@@ -189,6 +189,78 @@ backend:
           agent: "testing"
           comment: "✅ JWT authentication working correctly. Both admin and employee users can authenticate via /api/auth/login. Tokens properly generated and accepted for API access."
 
+  - task: "Sensor Devices Creation API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/sensors/devices working correctly. Successfully creates physical sensor devices with all required fields (id, name, sensor_type, location, unit, created_at in ISO format). Tested multiple sensor types: temperature_air, soil_moisture, ph_soil. All responses properly formatted without MongoDB _id fields."
+
+  - task: "Sensor Devices List API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GET /api/sensors/devices working correctly. Returns list of created sensor devices without MongoDB _id fields. Proper JSON structure maintained."
+
+  - task: "Sensor Readings Ingestion API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/sensors/readings working correctly. Successfully ingests sensor readings for existing devices. Properly validates sensor_id existence (returns 404 for non-existent sensors). Response includes all required fields: sensor_id, sensor_type, value, unit, location, timestamp."
+
+  - task: "Sensor Readings History API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ GET /api/sensors/readings/{sensor_id} working correctly. Returns filtered readings for specific sensor only. Supports limit parameter. No MongoDB _id fields in response. Proper data filtering implemented."
+
+  - task: "Sensor AI Analysis API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/sensors/ai-analysis working correctly. Successfully processes language parameter (fr/en). Returns proper response structure with 'summary' and 'analysis' fields. AI integration with emergentintegrations working. French language responses detected correctly."
+
+  - task: "Existing Sensor Endpoints Compatibility"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Existing sensor endpoints still functional. GET /api/sensors/current returns simulated data and persists to sensor_data collection. GET /api/sensors/history with sensor_type parameter works correctly. Both endpoints return data without MongoDB _id fields."
+
 frontend:
   # Frontend testing not performed as per instructions
 
