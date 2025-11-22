@@ -9,6 +9,8 @@ const Stock = ({ onLogout }) => {
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingItemId, setEditingItemId] = useState(null);
   const [newItem, setNewItem] = useState({
