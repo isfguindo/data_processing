@@ -285,8 +285,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "IoT sensor endpoints testing completed successfully"
-    - "AI analysis integration verified"
+    - "Sensors Page UI & AI Analysis Button - Testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
