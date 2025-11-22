@@ -86,6 +86,24 @@ const Stock = ({ onLogout }) => {
     try {
       await axios.put(`${API}/stock/${editingItemId}`, {
         item_name: newItem.item_name,
+        category: newItem.category,
+        quantity: parseFloat(newItem.quantity),
+        unit: newItem.unit,
+        min_threshold: parseFloat(newItem.min_threshold),
+        price_per_unit: parseFloat(newItem.price_per_unit),
+        currency: newItem.currency,
+      });
+      toast.success('Article modifié avec succès !');
+      setShowModal(false);
+      setIsEditing(false);
+      setEditingItemId(null);
+      setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
+      fetchStock();
+    } catch (error) {
+      toast.error('Erreur lors de la modification');
+    }
+  };
+
   const handlePreviewTasksFromAI = async () => {
     if (!aiAnalysis || !aiAnalysis.recommendations) {
       toast.error(language === 'fr' ? "Aucune recommandation IA disponible" : 'No AI recommendations available');
@@ -129,25 +147,6 @@ const Stock = ({ onLogout }) => {
       toast.error(language === 'fr' ? "Erreur lors de la création des tâches IA" : 'Error while creating AI tasks');
     } finally {
       setCreatingTasks(false);
-    }
-  };
-
-
-        category: newItem.category,
-        quantity: parseFloat(newItem.quantity),
-        unit: newItem.unit,
-        min_threshold: parseFloat(newItem.min_threshold),
-        price_per_unit: parseFloat(newItem.price_per_unit),
-        currency: newItem.currency,
-      });
-      toast.success('Article modifié avec succès !');
-      setShowModal(false);
-      setIsEditing(false);
-      setEditingItemId(null);
-      setNewItem({ item_name: '', category: 'seeds', quantity: '', unit: '', min_threshold: '', price_per_unit: '', currency: 'USD' });
-      fetchStock();
-    } catch (error) {
-      toast.error('Erreur lors de la modification');
     }
   };
 
