@@ -8,7 +8,12 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getTranslation } from '../locales';
 
 const Customers = ({ onLogout }) => {
+  const { language } = useLanguage();
+  const t = (key) => getTranslation(language, key);
+
   const [customers, setCustomers] = useState([]);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
