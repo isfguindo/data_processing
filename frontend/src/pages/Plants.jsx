@@ -18,6 +18,8 @@ const Plants = ({ onLogout }) => {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [diagnosing, setDiagnosing] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [newPlant, setNewPlant] = useState({
     name: '',
     plant_type: '',
