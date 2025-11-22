@@ -4,6 +4,8 @@ import { API } from '../App';
 import Sidebar from '../components/Sidebar';
 import { Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
+import { getTranslation } from '../locales';
 
 const Customers = ({ onLogout }) => {
   const [customers, setCustomers] = useState([]);
