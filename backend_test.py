@@ -25,6 +25,7 @@ class BackendTester:
         self.employee_user_id = None
         self.test_results = []
         self.created_task_id = None
+        self.created_sensor_device_id = None
         
     def log_result(self, test_name, success, message, details=None):
         """Log test result"""
