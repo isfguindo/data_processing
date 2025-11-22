@@ -8,6 +8,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { getTranslation } from '../locales';
 
 const Stock = ({ onLogout }) => {
+  const { language } = useLanguage();
+  const t = (key) => getTranslation(language, key);
+
   const [stock, setStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
