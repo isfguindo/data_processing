@@ -289,6 +289,54 @@ frontend:
           agent: "testing"
           comment: "✅ Tests complets réussis sur la page Capteurs IoT. Fonctionnalités testées: 1) Authentification et navigation vers /sensors - OK, 2) Bouton 'Actualiser les données' (data-testid='refresh-sensors-button') - fonctionne correctement, appelle GET /api/sensors/current et affiche 6 cartes de capteurs, 3) Bouton 'Analyse IA des capteurs' (data-testid='ai-analysis-button') - fonctionne parfaitement, appelle POST /api/sensors/ai-analysis avec {language: 'fr'}, 4) Panneau d'analyse IA (data-testid='ai-analysis-panel') - s'affiche correctement avec résumé des capteurs et recommandations détaillées (indices numériques + recommandations textuelles), 5) Rechargement de page - tous les boutons restent fonctionnels. Aucune erreur JavaScript détectée. Interface utilisateur entièrement fonctionnelle."
 
+  - task: "Stock Page AI Features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Stock.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Tests complets réussis sur la page Stock (/stock). Fonctionnalités testées: 1) Authentification et navigation vers /stock - OK, 2) Bouton 'Analyse IA du stock' (data-testid='stock-ai-button') - trouvé et visible, 3) Clic sur le bouton IA - fonctionne correctement, appelle POST /api/stock/ai-alerts, 4) Panneau d'analyse IA (data-testid='stock-ai-panel') - s'affiche correctement avec titre 'Analyse IA & Alertes Stock', affiche le nombre d'articles critiques/pré-alerte et recommandations IA, 5) Rechargement de page - bouton IA reste visible et cliquable. Aucune erreur JavaScript détectée."
+
+  - task: "Plants Page AI Features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Plants.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Tests complets réussis sur la page Plantes (/plants). Fonctionnalités testées: 1) Navigation vers /plants après connexion - OK, 2) Bouton 'Analyse IA des cultures' (data-testid='plants-ai-button') - trouvé et visible, 3) Clic sur le bouton IA - fonctionne correctement, appelle POST /api/plants/ai-recommendations avec {language: 'fr'}, 4) Panneau d'analyse IA (data-testid='plants-ai-panel') - s'affiche correctement avec titre 'Analyse IA globale des cultures', contient résumé des cultures et texte d'analyse IA en français, 5) Rechargement de page - bouton IA reste visible et cliquable. Aucune erreur JavaScript détectée."
+
+  - task: "Customers Page AI Features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Customers.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Tests complets réussis sur la page Clients (/customers). Fonctionnalités testées: 1) Navigation vers /customers - OK, 2) Bouton 'Insights IA clients' (data-testid='customers-ai-button') - trouvé et visible, 3) Clic sur le bouton IA - fonctionne correctement, appelle POST /api/customers/ai-insights avec {language: 'fr'}, 4) Panneau d'analyse IA (data-testid='customers-ai-panel') - s'affiche correctement avec titre 'Analyse IA du portefeuille clients', contient résumé et recommandations CRM IA, 5) Rechargement de page - bouton IA reste visible et cliquable. Aucune erreur JavaScript détectée."
+
+  - task: "Employees Page AI Features"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/Employees.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ Tests complets réussis sur la page Personnel (/employees). Fonctionnalités testées: 1) Navigation vers /employees - OK, 2) Bouton 'Analyse IA du personnel' (data-testid='employees-ai-button') - trouvé et visible, 3) Clic sur le bouton IA - fonctionne correctement, appelle POST /api/employees/ai-insights avec {language: 'fr'}, 4) Panneau d'analyse IA (data-testid='employees-ai-panel') - s'affiche correctement avec titre 'Analyse IA de la charge de travail', contient résumé et analyse IA sur la répartition des tâches et charge de travail, 5) Rechargement de page - bouton IA reste visible et cliquable. Aucune erreur JavaScript détectée."
+
 metadata:
   created_by: "testing_agent"
   version: "1.2"
