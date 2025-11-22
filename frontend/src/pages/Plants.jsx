@@ -146,20 +146,57 @@ const Plants = ({ onLogout }) => {
       <Sidebar onLogout={onLogout} />
       <div className="main-content">
         <div className="page-header">
-          <h1 data-testid="plants-title">Gestion des Plantes</h1>
-          <p>Surveillez et diagnostiquez vos cultures avec l'IA</p>
+          <h1 data-testid="plants-title">{t('plants.title')}</h1>
+          <p>{t('plants.subtitle')}</p>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button 
             className="btn btn-primary" 
             onClick={() => setShowAddModal(true)}
             data-testid="add-plant-button"
           >
             <Plus size={20} />
-            Ajouter une Plante
+            {t('plants.addPlant')}
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={fetchPlantsAI}
+            disabled={aiLoading}
+            data-testid="plants-ai-button"
+          >
+            {aiLoading
+              ? (language === 'fr' ? 'Analyse IA en cours...' : 'AI analysis in progress...')
+              : (language === 'fr' ? 'Analyse IA des cultures' : 'AI Crop Analysis')}
           </button>
         </div>
+
+        {aiAnalysis && (
+          <div className="content-card" style={{ marginBottom: '2rem' }} data-testid="plants-ai-panel">
+            <h2>{language === 'fr' ? 'Analyse IA globale des cultures' : 'Global AI Crop Analysis'}</h2>
+            {aiAnalysis.summary && (
+              <p style={{ whiteSpace: 'pre-line', fontSize: '0.9rem', color: '#81c784' }}>
+                <strong>{language === 'fr' ? 'Résumé des cultures :' : 'Crop summary:'}</strong>{'\n'}
+                {aiAnalysis.summary}
+              </p>
+            )}
+            {aiAnalysis.analysis && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(232, 245, 233, 0.9)',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {aiAnalysis.analysis}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="content-card">
           <h2>Liste des Plantes</h2>
