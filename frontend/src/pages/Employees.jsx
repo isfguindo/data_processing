@@ -15,6 +15,9 @@ const Employees = ({ onLogout }) => {
   const [aiLoading, setAiLoading] = useState(false);
   const [filterRole, setFilterRole] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('30d');
+  const [aiTasksPreview, setAiTasksPreview] = useState([]);
+  const [showAiTasksModal, setShowAiTasksModal] = useState(false);
+  const [creatingTasks, setCreatingTasks] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
