@@ -69,11 +69,24 @@ class UserResponse(BaseModel):
 class SensorData(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    sensor_type: str  # humidity, temperature, ph, wind, rain, sunlight
+    sensor_id: Optional[str] = None  # Optional link to a physical sensor device
+    sensor_type: str  # humidity, temperature, ph, wind, rain, sunlight, camera, drone
     value: float
     unit: str
     location: str = "Main Field"
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class SensorDevice(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    sensor_type: str  # temperature_air, humidity_air, soil_moisture, sunlight, ph_soil, camera_pests, drone
+    location: str = "Main Field"
+    unit: Optional[str] = None
+    description: Optional[str] = None
+    status: str = "active"  # active, inactive, maintenance
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class IrrigationSchedule(BaseModel):
     model_config = ConfigDict(extra="ignore")
