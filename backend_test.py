@@ -889,10 +889,631 @@ class BackendTester:
             except:
                 pass  # Ignore cleanup errors
     
+    def test_plants_ai_recommendations_empty(self):
+        """Test /api/plants/ai-recommendations with empty plants collection"""
+        print("\n=== Testing plants AI recommendations with empty collection ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # First, clear any existing plants to ensure clean test
+        try:
+            get_response = requests.get(f"{BASE_URL}/plants", headers=headers)
+            if get_response.status_code == 200:
+                existing_plants = get_response.json()
+                for plant in existing_plants:
+                    requests.delete(f"{BASE_URL}/plants/{plant['id']}", headers=headers)
+        except:
+            pass  # Ignore errors, proceed with test
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/plants/ai-recommendations", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Plants AI Recommendations Empty (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Plants AI Recommendations Empty Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains appropriate message
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Plants AI Recommendations Empty Summary", False, "Summary should be non-empty")
+                return
+            
+            # Verify analysis is null for empty collection
+            analysis = response_data["analysis"]
+            if analysis is not None:
+                self.log_result("Plants AI Recommendations Empty Analysis", False, f"Expected analysis=null, got: {analysis}")
+                return
+            
+            self.log_result("Plants AI Recommendations Empty (FR)", True, "Empty plants collection handled correctly")
+            
+        except Exception as e:
+            self.log_result("Plants AI Recommendations Empty (FR)", False, f"Request error: {e}")
+    
+    def test_plants_ai_recommendations_with_data(self):
+        """Test /api/plants/ai-recommendations with plant data"""
+        print("\n=== Testing plants AI recommendations with plant data ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Create test plants with various statuses
+        test_plants = [
+            {
+                "name": "Tomates Cerises",
+                "plant_type": "tomate",
+                "location": "Serre A",
+                "planting_date": "2024-01-15",
+                "status": "healthy"
+            },
+            {
+                "name": "Laitue Romaine",
+                "plant_type": "laitue",
+                "location": "Zone B",
+                "planting_date": "2024-02-01",
+                "status": "sick"
+            },
+            {
+                "name": "Courgettes",
+                "plant_type": "courgette",
+                "location": "Zone C",
+                "planting_date": "2024-01-20",
+                "status": "treated"
+            },
+            {
+                "name": "Basilic",
+                "plant_type": "herbe",
+                "location": "Serre A",
+                "planting_date": "2024-02-10",
+                "status": "healthy"
+            }
+        ]
+        
+        created_plant_ids = []
+        
+        # Create the test plants
+        for plant_data in test_plants:
+            try:
+                response = requests.post(f"{BASE_URL}/plants", json=plant_data, headers=headers)
+                if response.status_code == 200:
+                    created_plant = response.json()
+                    created_plant_ids.append(created_plant["id"])
+                    print(f"✅ Created test plant: {plant_data['name']}")
+                else:
+                    print(f"⚠️  Failed to create test plant: {plant_data['name']}")
+            except Exception as e:
+                print(f"⚠️  Error creating test plant {plant_data['name']}: {e}")
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/plants/ai-recommendations", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Plants AI Recommendations With Data (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Plants AI Recommendations Data Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains plant information
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Plants AI Recommendations Data Summary", False, "Summary should be non-empty")
+                return
+            
+            # Verify analysis is provided (not null)
+            analysis = response_data["analysis"]
+            if analysis is None:
+                self.log_result("Plants AI Recommendations Data Analysis", False, "Analysis should not be null when plants exist")
+                return
+            
+            if not analysis:
+                self.log_result("Plants AI Recommendations Data Analysis Content", False, "Analysis should be non-empty")
+                return
+            
+            # Check if response is in French (basic check)
+            french_indicators = ["plante", "culture", "recommand", "maladie", "traitement", "irrigation", "fertilisation"]
+            has_french = any(indicator in analysis.lower() for indicator in french_indicators)
+            
+            if has_french:
+                self.log_result("Plants AI Recommendations Language (FR)", True, "Response appears to be in French")
+            else:
+                self.log_result("Plants AI Recommendations Language (FR)", False, "Response may not be in French as requested")
+            
+            self.log_result("Plants AI Recommendations With Data (FR)", True, f"AI recommendations generated successfully ({len(analysis)} characters)")
+            
+        except Exception as e:
+            self.log_result("Plants AI Recommendations With Data (FR)", False, f"Request error: {e}")
+        
+        # Test with English language
+        request_data_en = {"language": "en"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/plants/ai-recommendations", json=request_data_en, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Plants AI Recommendations With Data (EN)", False, f"HTTP {response.status_code}", response.text)
+            else:
+                response_data = response.json()
+                analysis = response_data.get("analysis", "")
+                
+                if analysis:
+                    # Check if response is in English (basic check)
+                    english_indicators = ["plant", "crop", "recommend", "disease", "treatment", "irrigation", "fertilization"]
+                    has_english = any(indicator in analysis.lower() for indicator in english_indicators)
+                    
+                    if has_english:
+                        self.log_result("Plants AI Recommendations Language (EN)", True, "Response appears to be in English")
+                    else:
+                        self.log_result("Plants AI Recommendations Language (EN)", False, "Response may not be in English as requested")
+                    
+                    self.log_result("Plants AI Recommendations With Data (EN)", True, "English language request handled correctly")
+                else:
+                    self.log_result("Plants AI Recommendations With Data (EN)", False, "No analysis provided for English request")
+                
+        except Exception as e:
+            self.log_result("Plants AI Recommendations With Data (EN)", False, f"Request error: {e}")
+        
+        # Cleanup: Delete created test plants
+        for plant_id in created_plant_ids:
+            try:
+                requests.delete(f"{BASE_URL}/plants/{plant_id}", headers=headers)
+            except:
+                pass  # Ignore cleanup errors
+    
+    def test_customers_ai_insights_empty(self):
+        """Test /api/customers/ai-insights with empty customers collection"""
+        print("\n=== Testing customers AI insights with empty collection ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # First, clear any existing customers to ensure clean test
+        try:
+            get_response = requests.get(f"{BASE_URL}/customers", headers=headers)
+            if get_response.status_code == 200:
+                existing_customers = get_response.json()
+                for customer in existing_customers:
+                    requests.delete(f"{BASE_URL}/customers/{customer['id']}", headers=headers)
+        except:
+            pass  # Ignore errors, proceed with test
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/customers/ai-insights", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Customers AI Insights Empty (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Customers AI Insights Empty Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains appropriate message
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Customers AI Insights Empty Summary", False, "Summary should be non-empty")
+                return
+            
+            # Verify analysis is null for empty collection
+            analysis = response_data["analysis"]
+            if analysis is not None:
+                self.log_result("Customers AI Insights Empty Analysis", False, f"Expected analysis=null, got: {analysis}")
+                return
+            
+            self.log_result("Customers AI Insights Empty (FR)", True, "Empty customers collection handled correctly")
+            
+        except Exception as e:
+            self.log_result("Customers AI Insights Empty (FR)", False, f"Request error: {e}")
+    
+    def test_customers_ai_insights_with_data(self):
+        """Test /api/customers/ai-insights with customer and sales data"""
+        print("\n=== Testing customers AI insights with customer data ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Create test customers
+        test_customers = [
+            {
+                "name": "Ferme Dubois",
+                "email": "contact@fermedubois.fr",
+                "phone": "+33123456789",
+                "address": "123 Route de la Ferme, 75001 Paris",
+                "customer_type": "distributor",
+                "total_purchases": 2500.50
+            },
+            {
+                "name": "Marché Bio Local",
+                "email": "info@marchebio.fr",
+                "phone": "+33987654321",
+                "address": "456 Avenue du Marché, 69001 Lyon",
+                "customer_type": "retailer",
+                "total_purchases": 1200.75
+            },
+            {
+                "name": "Restaurant Le Jardin",
+                "phone": "+33555123456",
+                "address": "789 Rue des Saveurs, 13001 Marseille",
+                "customer_type": "direct_consumer",
+                "total_purchases": 850.25
+            }
+        ]
+        
+        created_customer_ids = []
+        
+        # Create the test customers
+        for customer_data in test_customers:
+            try:
+                response = requests.post(f"{BASE_URL}/customers", json=customer_data, headers=headers)
+                if response.status_code == 200:
+                    created_customer = response.json()
+                    created_customer_ids.append(created_customer["id"])
+                    print(f"✅ Created test customer: {customer_data['name']}")
+                else:
+                    print(f"⚠️  Failed to create test customer: {customer_data['name']}")
+            except Exception as e:
+                print(f"⚠️  Error creating test customer {customer_data['name']}: {e}")
+        
+        # Create some test sales for the customers
+        if created_customer_ids:
+            test_sales = [
+                {
+                    "product_name": "Tomates Bio",
+                    "quantity": 50.0,
+                    "unit": "kg",
+                    "price_per_unit": 4.50,
+                    "total_amount": 225.0,
+                    "customer_id": created_customer_ids[0]
+                },
+                {
+                    "product_name": "Courgettes",
+                    "quantity": 30.0,
+                    "unit": "kg",
+                    "price_per_unit": 3.20,
+                    "total_amount": 96.0,
+                    "customer_id": created_customer_ids[1]
+                }
+            ]
+            
+            for sale_data in test_sales:
+                try:
+                    requests.post(f"{BASE_URL}/sales", json=sale_data, headers=headers)
+                    print(f"✅ Created test sale: {sale_data['product_name']}")
+                except Exception as e:
+                    print(f"⚠️  Error creating test sale: {e}")
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/customers/ai-insights", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Customers AI Insights With Data (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Customers AI Insights Data Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains customer information
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Customers AI Insights Data Summary", False, "Summary should be non-empty")
+                return
+            
+            # Verify analysis is provided (not null)
+            analysis = response_data["analysis"]
+            if analysis is None:
+                self.log_result("Customers AI Insights Data Analysis", False, "Analysis should not be null when customers exist")
+                return
+            
+            if not analysis:
+                self.log_result("Customers AI Insights Data Analysis Content", False, "Analysis should be non-empty")
+                return
+            
+            # Check if response is in French (basic check)
+            french_indicators = ["client", "vente", "chiffre", "recommand", "fidélisation", "segment", "contact"]
+            has_french = any(indicator in analysis.lower() for indicator in french_indicators)
+            
+            if has_french:
+                self.log_result("Customers AI Insights Language (FR)", True, "Response appears to be in French")
+            else:
+                self.log_result("Customers AI Insights Language (FR)", False, "Response may not be in French as requested")
+            
+            self.log_result("Customers AI Insights With Data (FR)", True, f"AI insights generated successfully ({len(analysis)} characters)")
+            
+        except Exception as e:
+            self.log_result("Customers AI Insights With Data (FR)", False, f"Request error: {e}")
+        
+        # Test with English language
+        request_data_en = {"language": "en"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/customers/ai-insights", json=request_data_en, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Customers AI Insights With Data (EN)", False, f"HTTP {response.status_code}", response.text)
+            else:
+                response_data = response.json()
+                analysis = response_data.get("analysis", "")
+                
+                if analysis:
+                    # Check if response is in English (basic check)
+                    english_indicators = ["customer", "sales", "revenue", "recommend", "retention", "segment", "contact"]
+                    has_english = any(indicator in analysis.lower() for indicator in english_indicators)
+                    
+                    if has_english:
+                        self.log_result("Customers AI Insights Language (EN)", True, "Response appears to be in English")
+                    else:
+                        self.log_result("Customers AI Insights Language (EN)", False, "Response may not be in English as requested")
+                    
+                    self.log_result("Customers AI Insights With Data (EN)", True, "English language request handled correctly")
+                else:
+                    self.log_result("Customers AI Insights With Data (EN)", False, "No analysis provided for English request")
+                
+        except Exception as e:
+            self.log_result("Customers AI Insights With Data (EN)", False, f"Request error: {e}")
+        
+        # Cleanup: Delete created test customers (sales will be cleaned up automatically)
+        for customer_id in created_customer_ids:
+            try:
+                requests.delete(f"{BASE_URL}/customers/{customer_id}", headers=headers)
+            except:
+                pass  # Ignore cleanup errors
+    
+    def test_employees_ai_insights_empty(self):
+        """Test /api/employees/ai-insights with empty employees collection"""
+        print("\n=== Testing employees AI insights with empty collection ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Note: We can't easily clear all users as we need authenticated users for testing
+        # Instead, we'll test the scenario where there are users but no tasks
+        
+        # Clear any existing tasks to simulate empty workload
+        try:
+            get_response = requests.get(f"{BASE_URL}/tasks", headers=headers)
+            if get_response.status_code == 200:
+                existing_tasks = get_response.json()
+                for task in existing_tasks:
+                    requests.delete(f"{BASE_URL}/tasks/{task['id']}", headers=headers)
+        except:
+            pass  # Ignore errors, proceed with test
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/employees/ai-insights", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Employees AI Insights Empty Tasks (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Employees AI Insights Empty Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains employee information (even with no tasks)
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Employees AI Insights Empty Summary", False, "Summary should be non-empty")
+                return
+            
+            # Analysis should be provided even with no tasks (workload analysis)
+            analysis = response_data["analysis"]
+            if analysis is None:
+                self.log_result("Employees AI Insights Empty Analysis", False, "Analysis should not be null")
+                return
+            
+            self.log_result("Employees AI Insights Empty Tasks (FR)", True, "Empty tasks scenario handled correctly")
+            
+        except Exception as e:
+            self.log_result("Employees AI Insights Empty Tasks (FR)", False, f"Request error: {e}")
+    
+    def test_employees_ai_insights_with_data(self):
+        """Test /api/employees/ai-insights with employee and task data"""
+        print("\n=== Testing employees AI insights with employee and task data ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Create test tasks assigned to different users
+        test_tasks = [
+            {
+                "title": "Inspection des Tomates",
+                "description": "Vérifier l'état sanitaire des plants de tomates",
+                "assigned_to": self.admin_user_id,
+                "priority": "high",
+                "status": "completed",
+                "due_date": "2024-12-20"
+            },
+            {
+                "title": "Arrosage Zone A",
+                "description": "Irrigation programmée pour la zone A",
+                "assigned_to": self.admin_user_id,
+                "priority": "medium",
+                "status": "in_progress",
+                "due_date": "2024-12-21"
+            },
+            {
+                "title": "Récolte Laitues",
+                "description": "Récolte des laitues matures",
+                "assigned_to": self.employee_user_id,
+                "priority": "high",
+                "status": "pending",
+                "due_date": "2024-12-22"
+            },
+            {
+                "title": "Nettoyage Serre",
+                "description": "Nettoyage et désinfection de la serre B",
+                "assigned_to": self.employee_user_id,
+                "priority": "low",
+                "status": "completed",
+                "due_date": "2024-12-19"
+            }
+        ]
+        
+        created_task_ids = []
+        
+        # Create the test tasks
+        for task_data in test_tasks:
+            try:
+                response = requests.post(f"{BASE_URL}/tasks", json=task_data, headers=headers)
+                if response.status_code == 200:
+                    created_task = response.json()
+                    created_task_ids.append(created_task["id"])
+                    print(f"✅ Created test task: {task_data['title']}")
+                else:
+                    print(f"⚠️  Failed to create test task: {task_data['title']}")
+            except Exception as e:
+                print(f"⚠️  Error creating test task {task_data['title']}: {e}")
+        
+        # Test with French language
+        request_data = {"language": "fr"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/employees/ai-insights", json=request_data, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Employees AI Insights With Data (FR)", False, f"HTTP {response.status_code}", response.text)
+                return
+            
+            response_data = response.json()
+            
+            # Check required fields
+            if "summary" not in response_data or "analysis" not in response_data:
+                self.log_result("Employees AI Insights Data Fields", False, f"Missing required fields. Got: {list(response_data.keys())}")
+                return
+            
+            # Verify summary contains employee information
+            summary = response_data["summary"]
+            if not summary:
+                self.log_result("Employees AI Insights Data Summary", False, "Summary should be non-empty")
+                return
+            
+            # Verify analysis is provided (not null)
+            analysis = response_data["analysis"]
+            if analysis is None:
+                self.log_result("Employees AI Insights Data Analysis", False, "Analysis should not be null when employees exist")
+                return
+            
+            if not analysis:
+                self.log_result("Employees AI Insights Data Analysis Content", False, "Analysis should be non-empty")
+                return
+            
+            # Check if response is in French (basic check)
+            french_indicators = ["employé", "tâche", "charge", "travail", "recommand", "formation", "répartition", "performance"]
+            has_french = any(indicator in analysis.lower() for indicator in french_indicators)
+            
+            if has_french:
+                self.log_result("Employees AI Insights Language (FR)", True, "Response appears to be in French")
+            else:
+                self.log_result("Employees AI Insights Language (FR)", False, "Response may not be in French as requested")
+            
+            self.log_result("Employees AI Insights With Data (FR)", True, f"AI insights generated successfully ({len(analysis)} characters)")
+            
+        except Exception as e:
+            self.log_result("Employees AI Insights With Data (FR)", False, f"Request error: {e}")
+        
+        # Test with English language
+        request_data_en = {"language": "en"}
+        
+        try:
+            response = requests.post(f"{BASE_URL}/employees/ai-insights", json=request_data_en, headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Employees AI Insights With Data (EN)", False, f"HTTP {response.status_code}", response.text)
+            else:
+                response_data = response.json()
+                analysis = response_data.get("analysis", "")
+                
+                if analysis:
+                    # Check if response is in English (basic check)
+                    english_indicators = ["employee", "task", "workload", "work", "recommend", "training", "allocation", "performance"]
+                    has_english = any(indicator in analysis.lower() for indicator in english_indicators)
+                    
+                    if has_english:
+                        self.log_result("Employees AI Insights Language (EN)", True, "Response appears to be in English")
+                    else:
+                        self.log_result("Employees AI Insights Language (EN)", False, "Response may not be in English as requested")
+                    
+                    self.log_result("Employees AI Insights With Data (EN)", True, "English language request handled correctly")
+                else:
+                    self.log_result("Employees AI Insights With Data (EN)", False, "No analysis provided for English request")
+                
+        except Exception as e:
+            self.log_result("Employees AI Insights With Data (EN)", False, f"Request error: {e}")
+        
+        # Cleanup: Delete created test tasks
+        for task_id in created_task_ids:
+            try:
+                requests.delete(f"{BASE_URL}/tasks/{task_id}", headers=headers)
+            except:
+                pass  # Ignore cleanup errors
+    
+    def test_mongodb_id_fields(self):
+        """Test that no MongoDB _id fields are returned in AI endpoints"""
+        print("\n=== Testing MongoDB _id field exclusion in AI endpoints ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test all three AI endpoints for MongoDB _id fields
+        endpoints_to_test = [
+            ("/plants/ai-recommendations", {"language": "fr"}),
+            ("/customers/ai-insights", {"language": "fr"}),
+            ("/employees/ai-insights", {"language": "fr"})
+        ]
+        
+        for endpoint, request_data in endpoints_to_test:
+            try:
+                response = requests.post(f"{BASE_URL}{endpoint}", json=request_data, headers=headers)
+                
+                if response.status_code == 200:
+                    response_data = response.json()
+                    
+                    # Check if response contains any _id fields (should not)
+                    response_str = json.dumps(response_data)
+                    if "_id" in response_str:
+                        self.log_result(f"MongoDB ID Check {endpoint}", False, "Response contains MongoDB _id field")
+                    else:
+                        self.log_result(f"MongoDB ID Check {endpoint}", True, "No MongoDB _id fields found")
+                else:
+                    self.log_result(f"MongoDB ID Check {endpoint}", False, f"HTTP {response.status_code}")
+                    
+            except Exception as e:
+                self.log_result(f"MongoDB ID Check {endpoint}", False, f"Request error: {e}")
+    
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting Backend API Tests for Stock AI Alerts Endpoint")
+        print("🚀 Starting Backend API Tests for New AI Endpoints")
         print(f"Base URL: {BASE_URL}")
+        print("Testing: /api/plants/ai-recommendations, /api/customers/ai-insights, /api/employees/ai-insights")
         
         # Setup
         self.setup_test_users()
@@ -901,9 +1522,21 @@ class BackendTester:
             print("❌ Authentication failed, cannot continue with tests")
             return False
         
-        # Run stock AI alerts tests (new endpoint)
-        self.test_stock_ai_alerts_empty_stock()
-        self.test_stock_ai_alerts_with_items()
+        # Run new AI endpoints tests
+        print("\n🌱 Testing Plants AI Recommendations Endpoint")
+        self.test_plants_ai_recommendations_empty()
+        self.test_plants_ai_recommendations_with_data()
+        
+        print("\n👥 Testing Customers AI Insights Endpoint")
+        self.test_customers_ai_insights_empty()
+        self.test_customers_ai_insights_with_data()
+        
+        print("\n👷 Testing Employees AI Insights Endpoint")
+        self.test_employees_ai_insights_empty()
+        self.test_employees_ai_insights_with_data()
+        
+        print("\n🔍 Testing MongoDB ID Field Exclusion")
+        self.test_mongodb_id_fields()
         
         # Summary
         print("\n" + "="*50)
