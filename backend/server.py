@@ -758,6 +758,64 @@ async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, 
         ptype, status = key.split("|")
         lines.append(f"- {ptype} ({status}): {count} plante(s)")
 
+class CustomersAIInsightsRequest(BaseModel):
+    language: str = "fr"
+
+
+@api_router.post("/customers/ai-insights")
+async def get_customers_ai_insights(request: CustomersAIInsightsRequest, current_user: Dict = Depends(get_current_user)):
+    """Analyse IA des clients et des ventes pour générer des insights CRM."""
+    customers = await db.customers.find({}, {"_id": 0}).to_list(1000)
+    sales = await db.sales.find({}, {"_id": 0}).to_list(2000)
+
+    if not customers:
+        msg = "Aucun client enregistré." if request.language == "fr" else "No customers registered."
+        return {"summary": msg, "analysis": None}
+
+    # Résumé simple
+    total_customers = len(customers)
+    total_revenue = sum(c.get("total_purchases", 0.0) for c in customers)
+
+    top_customers = sorted(customers, key=lambda c: c.get("total_purchases", 0.0), reverse=True)[:5]
+    top_lines = [f"- {c['name']}: {c.get('total_purchases', 0.0):.2f}" for c in top_customers]
+
+    summary_lines = [
+        f"Total customers: {total_customers}",
+        f"Total revenue (customers.total_purchases): {total_revenue:.2f}",
+        "Top 5 customers by total purchases:",
+        *top_lines,
+    ]
+    customers_summary = "\n".join(summary_lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"customers-ai-insights-{uuid.uuid4()}",
+        system_message=(
+            "You are a CRM and sales optimization assistant for an agricultural business. "
+            "You analyze customer segments, revenue concentration and churn risk, and you propose concrete follow-up actions. "
+            "Always respond in " + language_name + "."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            "Based on the following customer revenue summary, provide: \n"
+            "1) A short analysis of customer concentration and segments (key accounts, regulars, small clients).\n"
+            "2) A list of 5-7 concrete CRM actions (who to contact, what to offer, retention strategies).\n\n"
+            "Customer summary:\n" + customers_summary
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": customers_summary,
+        "analysis": ai_response,
+    }
+
+
     plants_summary = "\n".join(lines)
 
     language_name = "French" if request.language == "fr" else "English"
