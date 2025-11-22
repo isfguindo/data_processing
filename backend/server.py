@@ -992,28 +992,6 @@ async def get_employees_ai_insights(request: EmployeesAIInsightsRequest, current
     }
 
 
-
-    prompt += "CRITICAL ITEMS (below minimum threshold):\n" + (critical_summary or "None") + "\n\n"
-    prompt += "WARNING ITEMS (close to minimum threshold):\n" + (warning_summary or "None")
-
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"stock-ai-alerts-{uuid.uuid4()}",
-        system_message=(
-            "You are an AI assistant helping a farm manager keep stock at safe levels while minimizing waste."
-        ),
-    ).with_model("openai", "gpt-4o")
-
-    message = UserMessage(text=prompt)
-    ai_response = await chat.send_message(message)
-
-    return {
-        "critical_items": critical_items,
-        "warning_items": warning_items,
-        "summary": "",
-        "recommendations": ai_response,
-    }
-
 @api_router.get("/irrigation/auto-history")
 async def get_auto_irrigation_history(limit: int = 10, current_user: Dict = Depends(get_current_user)):
     history = await db.auto_irrigation_triggers.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
