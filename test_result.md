@@ -381,7 +381,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "New AI Endpoints Testing - All completed successfully"
+    - "AI Features Frontend Testing - All completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
