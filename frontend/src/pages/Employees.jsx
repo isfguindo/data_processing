@@ -4,6 +4,7 @@ import { API } from '../App';
 import Sidebar from '../components/Sidebar';
 import { Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const Employees = ({ onLogout }) => {
   const [employees, setEmployees] = useState([]);
