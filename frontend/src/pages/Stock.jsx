@@ -132,16 +132,64 @@ const Stock = ({ onLogout }) => {
       <Sidebar onLogout={onLogout} />
       <div className="main-content">
         <div className="page-header">
-          <h1>Gestion du Stock</h1>
-          <p>Inventaire et suivi des ressources</p>
+          <h1>{t('stock.title')}</h1>
+          <p>{t('stock.subtitle')}</p>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="add-stock-button">
             <Plus size={20} />
-            Ajouter un Article
+            {t('stock.addItem')}
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={fetchStockAI}
+            disabled={aiLoading}
+            data-testid="stock-ai-button"
+          >
+            {aiLoading ? (language === 'fr' ? "Analyse IA en cours..." : 'AI analysis in progress...') : (language === 'fr' ? 'Analyse IA du stock' : 'AI Stock Analysis')}
           </button>
         </div>
+
+        {aiAnalysis && (
+          <div className="content-card" style={{ marginBottom: '2rem', borderLeft: '4px solid #f57f17' }} data-testid="stock-ai-panel">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+              <AlertTriangle size={22} color="#f57f17" />
+              <h2 style={{ margin: 0 }}>{language === 'fr' ? 'Analyse IA & Alertes Stock' : 'AI Analysis & Stock Alerts'}</h2>
+            </div>
+
+            {aiAnalysis.critical_items?.length > 0 && (
+              <p style={{ color: '#e53935', marginBottom: '0.5rem' }}>
+                {language === 'fr'
+                  ? `${aiAnalysis.critical_items.length} article(s) sont en dessous du seuil minimum.`
+                  : `${aiAnalysis.critical_items.length} item(s) are below minimum threshold.`}
+              </p>
+            )}
+            {aiAnalysis.warning_items?.length > 0 && (
+              <p style={{ color: '#fb8c00', marginBottom: '0.5rem' }}>
+                {language === 'fr'
+                  ? `${aiAnalysis.warning_items.length} article(s) approchent du seuil minimum.`
+                  : `${aiAnalysis.warning_items.length} item(s) are close to minimum threshold.`}
+              </p>
+            )}
+
+            {aiAnalysis.recommendations && (
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 243, 224, 0.8)',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {aiAnalysis.recommendations}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="content-card">
           <h2>Liste du Stock</h2>
