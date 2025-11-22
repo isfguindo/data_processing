@@ -44,7 +44,19 @@ const Customers = ({ onLogout }) => {
   const fetchCustomersAI = async () => {
     setAiLoading(true);
     try {
-      const response = await axios.post(`${API}/customers/ai-insights`, { language });
+      const customer_types = filterType === 'all' ? null : [filterType];
+      let since_days = null;
+      if (filterPeriod === '30d') since_days = 30;
+      else if (filterPeriod === '90d') since_days = 90;
+      else if (filterPeriod === '365d') since_days = 365;
+
+      const payload = {
+        language,
+        customer_types,
+        since_days,
+      };
+
+      const response = await axios.post(`${API}/customers/ai-insights`, payload);
       setAiAnalysis(response.data);
       toast.success(language === 'fr' ? 'Insights IA clients générés' : 'AI customer insights generated');
     } catch (error) {
