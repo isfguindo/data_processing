@@ -295,9 +295,45 @@ metadata:
   test_sequence: 3
   run_ui: false
 
+  - task: "Plants AI Recommendations Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/plants/ai-recommendations endpoint working perfectly. Comprehensive testing completed: 1) Empty plants case - correctly returns summary with appropriate message and analysis=null, 2) Plants with various statuses (healthy, sick, treated) - properly analyzes plant data and generates AI recommendations, 3) Language support - handles both French ('fr') and English ('en') parameters with appropriate AI responses in correct languages, 4) Response structure - contains required fields {summary: string, analysis: string | null}, 5) No MongoDB serialization errors - all responses properly formatted without _id fields. AI integration with emergentintegrations working correctly for agricultural plant management recommendations."
+
+  - task: "Customers AI Insights Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/customers/ai-insights endpoint working perfectly. Comprehensive testing completed: 1) Empty customers case - correctly returns summary with appropriate message and analysis=null, 2) Customers with sales data - properly analyzes customer segments, revenue concentration, and generates CRM insights, 3) Language support - handles both French ('fr') and English ('en') parameters with appropriate AI responses in correct languages, 4) Response structure - contains required fields {summary: string, analysis: string | null}, 5) No MongoDB serialization errors - all responses properly formatted without _id fields. AI integration with emergentintegrations working correctly for customer relationship management recommendations."
+
+  - task: "Employees AI Insights Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/employees/ai-insights endpoint working perfectly. Comprehensive testing completed: 1) Empty tasks scenario - correctly handles employees with no tasks and provides workload analysis, 2) Employees with task data - properly analyzes workload distribution, task status (pending, in_progress, completed), and generates HR insights, 3) Language support - handles both French ('fr') and English ('en') parameters with appropriate AI responses in correct languages, 4) Response structure - contains required fields {summary: string, analysis: string | null}, 5) No MongoDB serialization errors - all responses properly formatted without _id fields. AI integration with emergentintegrations working correctly for workforce management and task allocation recommendations."
+
 test_plan:
   current_focus:
-    - "Stock AI Alerts Endpoint - Testing completed successfully"
+    - "New AI Endpoints Testing - All completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -311,3 +347,5 @@ agent_communication:
       message: "Frontend Sensors page testing completed successfully. Comprehensive UI testing performed with Playwright automation: 1) Authentication and navigation to /sensors page working correctly, 2) 'Actualiser les données' button (refresh-sensors-button) functions properly - calls GET /api/sensors/current and displays 6 sensor cards with real data, 3) 'Analyse IA des capteurs' button (ai-analysis-button) works perfectly - calls POST /api/sensors/ai-analysis with French language parameter, 4) AI analysis panel (ai-analysis-panel) displays correctly with comprehensive content including sensor summary and detailed recommendations (numerical indices + textual recommendations), 5) Page reload behavior verified - all buttons remain functional after refresh. No JavaScript errors detected. Full integration between frontend and backend AI analysis working flawlessly."
     - agent: "testing"
       message: "Stock AI Alerts endpoint testing completed with 100% success rate (10/10 tests passed). Comprehensive testing of POST /api/stock/ai-alerts endpoint: 1) Empty stock scenario - correctly returns critical_items=[], warning_items=[], non-empty summary, and empty recommendations, 2) Critical/warning classification logic - properly identifies critical items (quantity <= min_threshold) and warning items (min_threshold < quantity <= 1.2 * min_threshold), 3) Language support verified - both French ('fr') and English ('en') parameters produce appropriate AI responses in correct languages, 4) No MongoDB serialization errors - all responses properly formatted without _id fields, 5) AI integration with emergentintegrations working correctly for intelligent stock management recommendations. The endpoint provides valuable insights for inventory management with multilingual support."
+    - agent: "testing"
+      message: "New AI Endpoints testing completed with 100% success rate (20/20 tests passed). Comprehensive testing of three new AI endpoints: 1) POST /api/plants/ai-recommendations - analyzes crop status and provides agricultural recommendations with risk indices and actionable tasks, handles empty plants collection correctly (analysis=null), supports French/English languages, 2) POST /api/customers/ai-insights - analyzes customer segments and sales data to generate CRM insights and retention strategies, handles empty customers collection correctly (analysis=null), supports French/English languages, 3) POST /api/employees/ai-insights - analyzes workload distribution and task allocation to provide HR recommendations for coaching and task reallocation, handles scenarios with no tasks, supports French/English languages. All endpoints: return proper response structure {summary: string, analysis: string | null}, exclude MongoDB _id fields, integrate correctly with emergentintegrations AI service. No critical issues found - all endpoints ready for production use."
