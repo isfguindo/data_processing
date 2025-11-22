@@ -65,6 +65,42 @@ const Employees = ({ onLogout }) => {
           <p>{language === 'fr' ? 'Suivi des employés et de leurs performances' : 'Tracking employees and their performance'}</p>
         </div>
 
+        {/* Filtres IA Personnel */}
+        <div style={{
+          marginBottom: '1rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          alignItems: 'center',
+        }}>
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Rôle' : 'Role'}</label>
+            <select
+              className="form-input"
+              value={filterRole}
+              onChange={(e) => setFilterRole(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Tous les rôles' : 'All roles'}</option>
+              <option value="admin">Admin</option>
+              <option value="manager">{language === 'fr' ? 'Gestionnaire' : 'Manager'}</option>
+              <option value="employee">{language === 'fr' ? 'Employé' : 'Employee'}</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Période des tâches' : 'Task period'}</label>
+            <select
+              className="form-input"
+              value={filterPeriod}
+              onChange={(e) => setFilterPeriod(e.target.value)}
+            >
+              <option value="7d">{language === 'fr' ? '7 derniers jours' : 'Last 7 days'}</option>
+              <option value="30d">{language === 'fr' ? '30 derniers jours' : 'Last 30 days'}</option>
+              <option value="90d">{language === 'fr' ? '90 derniers jours' : 'Last 90 days'}</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button
             className="btn btn-secondary"
