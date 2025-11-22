@@ -652,6 +652,105 @@ async def trigger_auto_irrigation(request: AIRecommendationRequest = AIRecommend
         
         schedule_dict = schedule.model_dump()
         schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
+# ==================== STOCK AI ALERTS ROUTE ====================
+
+class StockAIAlertsRequest(BaseModel):
+    language: str = "fr"
+
+
+@api_router.post("/stock/ai-alerts")
+async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict = Depends(get_current_user)):
+    """Analyse le stock pour détecter les niveaux critiques et générer des recommandations IA.
+
+    - Critique: quantity <= min_threshold
+    - Pré-alerte: quantity <= 1.2 * min_threshold (mais > min_threshold)
+    """
+    # Récupérer tout le stock
+    items = await db.stock.find({}, {"_id": 0}).to_list(1000)
+
+    critical_items = []
+    warning_items = []
+
+    for item in items:
+        qty = float(item.get("quantity", 0))
+        threshold = float(item.get("min_threshold", 0))
+        if threshold <= 0:
+            continue
+        if qty <= threshold:
+            critical_items.append(item)
+        elif qty <= threshold * 1.2:
+            warning_items.append(item)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    # Si aucun problème, message simple sans appel IA
+    if not critical_items and not warning_items:
+        msg = (
+            "Tous les niveaux de stock sont au-dessus des seuils définis. Aucun risque immédiat de rupture." 
+            if request.language == "fr" 
+            else "All stock levels are above defined thresholds. No immediate stock-out risk."
+        )
+        return {
+            "critical_items": [],
+            "warning_items": [],
+            "summary": msg,
+            "recommendations": "",
+        }
+
+    # Construire un résumé texte pour l'IA
+    def summarize_items(items_list):
+        lines = []
+        for it in items_list[:20]:  # limiter pour garder le prompt compact
+            lines.append(
+                f"- {it['item_name']} ({it['category']}): {it['quantity']} {it['unit']} (seuil {it['min_threshold']})"
+            )
+        return "\n".join(lines)
+
+    critical_summary = summarize_items(critical_items)
+    warning_summary = summarize_items(warning_items)
+
+    prompt = (
+        f"You are an AI assistant specialized in farm inventory management. "
+        f"Analyze the following stock situation and provide:")
+    if request.language == "fr":
+        prompt = (
+            "Tu es un assistant IA spécialisé en gestion de stock agricole. "
+            "Analyse la situation suivante et fournis: \n"
+            "1) Un court résumé des risques de rupture de stock. \n"
+            "2) Des recommandations concrètes: quels produits réapprovisionner en priorité, "
+            "quelles quantités approximatives, et d'éventuelles substitutions. Réponds en Français.\n\n"
+        )
+    else:
+        prompt = (
+            "You are an AI assistant specialized in farm inventory management. "
+            "Analyze the following situation and provide: \n"
+            "1) A short summary of stock-out risks. \n"
+            "2) Concrete recommendations: which products to restock first, approximate quantities, "
+            "and possible substitutions. Respond in English.\n\n"
+        )
+
+    prompt += "CRITICAL ITEMS (below minimum threshold):\n" + (critical_summary or "None") + "\n\n"
+    prompt += "WARNING ITEMS (close to minimum threshold):\n" + (warning_summary or "None")
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"stock-ai-alerts-{uuid.uuid4()}",
+        system_message=(
+            "You are an AI assistant helping a farm manager keep stock at safe levels while minimizing waste."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(text=prompt)
+    ai_response = await chat.send_message(message)
+
+    return {
+        "critical_items": critical_items,
+        "warning_items": warning_items,
+        "summary": "",
+        "recommendations": ai_response,
+    }
+
+
         await db.irrigation.insert_one(schedule_dict)
     
     # Record trigger
