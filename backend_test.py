@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Backend API Testing Script for AgroFarm Application
-Tests specifically focused on tasks and employees endpoints as requested.
+Tests focused on IoT sensor endpoints and AI analysis functionality.
 """
 
 import requests
