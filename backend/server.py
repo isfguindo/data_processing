@@ -926,13 +926,24 @@ async def get_customers_ai_insights(request: CustomersAIInsightsRequest, current
 
 class EmployeesAIInsightsRequest(BaseModel):
     language: str = "fr"
+    roles: Optional[List[str]] = None
+    since_days: Optional[int] = None
 
 
 @api_router.post("/employees/ai-insights")
 async def get_employees_ai_insights(request: EmployeesAIInsightsRequest, current_user: Dict = Depends(get_current_user)):
-    """Analyse IA de la répartition de la charge de travail et des performances du personnel."""
-    employees = await db.users.find({"role": {"$in": ["admin", "manager", "employee"]}}, {"_id": 0, "password_hash": 0}).to_list(1000)
-    tasks = await db.tasks.find({}, {"_id": 0}).to_list(5000)
+    """Analyse IA de la répartition de la charge de travail et des performances du personnel, avec filtres."""
+    # Filtre employés
+    role_filter = request.roles if request.roles else ["admin", "manager", "employee"]
+    employees = await db.users.find({"role": {"$in": role_filter}}, {"_id": 0, "password_hash": 0}).to_list(1000)
+
+    # Filtre tâches par période
+    tasks_query: Dict[str, Any] = {}
+    if request.since_days is not None and request.since_days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=request.since_days)
+        tasks_query["created_at"] = {"$gte": cutoff.isoformat()}
+
+    tasks = await db.tasks.find(tasks_query, {"_id": 0}).to_list(5000)
 
     if not employees:
         msg = "Aucun employé enregistré." if request.language == "fr" else "No employees registered."
