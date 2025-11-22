@@ -90,6 +90,9 @@ const Customers = ({ onLogout }) => {
       fetchCustomers();
     } catch (error) {
       toast.error('Erreur lors de la suppression');
+    }
+  };
+
   const handlePreviewTasksFromAI = async () => {
     if (!aiAnalysis || !aiAnalysis.analysis) {
       toast.error(language === 'fr' ? "Aucune recommandation IA disponible" : 'No AI recommendations available');
