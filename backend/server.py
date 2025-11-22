@@ -652,6 +652,8 @@ async def trigger_auto_irrigation(request: AIRecommendationRequest = AIRecommend
         
         schedule_dict = schedule.model_dump()
         schedule_dict['created_at'] = schedule_dict['created_at'].isoformat()
+        await db.irrigation.insert_one(schedule_dict)
+
 # ==================== STOCK AI ALERTS ROUTE ====================
 
 class StockAIAlertsRequest(BaseModel):
