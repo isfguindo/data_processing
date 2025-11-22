@@ -380,6 +380,16 @@ const Plants = ({ onLogout }) => {
                 {aiAnalysis.analysis}
               </div>
             )}
+
+            {aiAnalysis.analysis && (
+              <button
+                className="btn btn-primary"
+                onClick={handlePreviewTasksFromAI}
+                style={{ marginTop: '1rem' }}
+              >
+                {language === 'fr' ? 'Créer des tâches à partir de l\'IA' : 'Create tasks from AI'}
+              </button>
+            )}
           </div>
         )}
 
