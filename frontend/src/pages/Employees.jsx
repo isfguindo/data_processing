@@ -173,18 +173,27 @@ const Employees = ({ onLogout }) => {
               </p>
             )}
             {aiAnalysis.analysis && (
-              <div
-                style={{
-                  marginTop: '0.75rem',
-                  padding: '0.75rem 1rem',
-                  borderRadius: '12px',
-                  background: 'rgba(232, 245, 233, 0.9)',
-                  fontSize: '0.95rem',
-                  whiteSpace: 'pre-line',
-                }}
-              >
-                {aiAnalysis.analysis}
-              </div>
+              <>
+                <div
+                  style={{
+                    marginTop: '0.75rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    background: 'rgba(232, 245, 233, 0.9)',
+                    fontSize: '0.95rem',
+                    whiteSpace: 'pre-line',
+                  }}
+                >
+                  {aiAnalysis.analysis}
+                </div>
+                <button
+                  className="btn btn-primary"
+                  onClick={handlePreviewTasksFromAI}
+                  style={{ marginTop: '0.75rem' }}
+                >
+                  {language === 'fr' ? 'Créer des tâches IA' : 'Create AI Tasks'}
+                </button>
+              </>
             )}
           </div>
         )}
