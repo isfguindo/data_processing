@@ -752,36 +752,6 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
         "recommendations": ai_response,
     }
 
-    # Record trigger
-    trigger = AutoIrrigationTrigger(
-        triggered_by="auto" if settings.get('enabled') else "manual",
-        temperature=temperature,
-        humidity=humidity,
-        zones_irrigated=zones_irrigated,
-        total_water_used=total_water,
-        ai_recommendation=ai_recommendation
-    )
-    
-    trigger_dict = trigger.model_dump()
-    trigger_dict['timestamp'] = trigger_dict['timestamp'].isoformat()
-    await db.auto_irrigation_triggers.insert_one(trigger_dict)
-    
-    # Update last triggered timestamp
-    await db.auto_irrigation_settings.update_one(
-        {"user_id": current_user['user_id']},
-        {"$set": {"last_triggered": datetime.now(timezone.utc).isoformat()}}
-    )
-    
-    return {
-        "triggered": True,
-        "reasons": reasons,
-        "zones_irrigated": zones_irrigated,
-        "total_water_used": total_water,
-        "ai_recommendation": ai_recommendation,
-        "temperature": temperature,
-        "humidity": humidity
-    }
-
 @api_router.get("/irrigation/auto-history")
 async def get_auto_irrigation_history(limit: int = 10, current_user: Dict = Depends(get_current_user)):
     history = await db.auto_irrigation_triggers.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
