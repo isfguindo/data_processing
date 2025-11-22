@@ -13,6 +13,8 @@ const Employees = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterPeriod, setFilterPeriod] = useState('30d');
 
   useEffect(() => {
     fetchEmployees();
