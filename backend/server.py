@@ -758,6 +758,37 @@ async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, 
         ptype, status = key.split("|")
         lines.append(f"- {ptype} ({status}): {count} plante(s)")
 
+    plants_summary = "\n".join(lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"plants-ai-reco-{uuid.uuid4()}",
+        system_message=(
+            "You are an agronomic AI assistant. You analyze crop status and propose both risk indices "
+            "and concrete operational actions for the coming days. Always respond in " + language_name + "."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            "Analyze the following crop status and provide: \n"
+            "1) Numerical risk indices between 0 and 100 for: disease_risk, water_stress, nutrient_deficiency_risk.\n"
+            "2) A concise summary (3-4 sentences) of the overall situation.\n"
+            "3) A prioritized list of actionable tasks for the next 7 days (inspection, treatment, irrigation, fertilization, pruning, etc.).\n\n"
+            "Crop summary by type and status:\n" + plants_summary
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": plants_summary,
+        "analysis": ai_response,
+    }
+
+
 class CustomersAIInsightsRequest(BaseModel):
     language: str = "fr"
 
@@ -786,6 +817,36 @@ async def get_customers_ai_insights(request: CustomersAIInsightsRequest, current
         *top_lines,
     ]
     customers_summary = "\n".join(summary_lines)
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"customers-ai-insights-{uuid.uuid4()}",
+        system_message=(
+            "You are a CRM and sales optimization assistant for an agricultural business. "
+            "You analyze customer segments, revenue concentration and churn risk, and you propose concrete follow-up actions. "
+            "Always respond in " + language_name + "."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(
+        text=(
+            "Based on the following customer revenue summary, provide: \n"
+            "1) A short analysis of customer concentration and segments (key accounts, regulars, small clients).\n"
+            "2) A list of 5-7 concrete CRM actions (who to contact, what to offer, retention strategies).\n\n"
+            "Customer summary:\n" + customers_summary
+        )
+    )
+
+    ai_response = await chat.send_message(message)
+
+    return {
+        "summary": customers_summary,
+        "analysis": ai_response,
+    }
+
+
 class EmployeesAIInsightsRequest(BaseModel):
     language: str = "fr"
 
@@ -839,67 +900,6 @@ async def get_employees_ai_insights(request: EmployeesAIInsightsRequest, current
 
     return {
         "summary": employees_summary,
-        "analysis": ai_response,
-    }
-
-
-
-    language_name = "French" if request.language == "fr" else "English"
-
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"customers-ai-insights-{uuid.uuid4()}",
-        system_message=(
-            "You are a CRM and sales optimization assistant for an agricultural business. "
-            "You analyze customer segments, revenue concentration and churn risk, and you propose concrete follow-up actions. "
-            "Always respond in " + language_name + "."
-        ),
-    ).with_model("openai", "gpt-4o")
-
-    message = UserMessage(
-        text=(
-            "Based on the following customer revenue summary, provide: \n"
-            "1) A short analysis of customer concentration and segments (key accounts, regulars, small clients).\n"
-            "2) A list of 5-7 concrete CRM actions (who to contact, what to offer, retention strategies).\n\n"
-            "Customer summary:\n" + customers_summary
-        )
-    )
-
-    ai_response = await chat.send_message(message)
-
-    return {
-        "summary": customers_summary,
-        "analysis": ai_response,
-    }
-
-
-    plants_summary = "\n".join(lines)
-
-    language_name = "French" if request.language == "fr" else "English"
-
-    chat = LlmChat(
-        api_key=EMERGENT_LLM_KEY,
-        session_id=f"plants-ai-reco-{uuid.uuid4()}",
-        system_message=(
-            "You are an agronomic AI assistant. You analyze crop status and propose both risk indices "
-            "and concrete operational actions for the coming days. Always respond in " + language_name + "."
-        ),
-    ).with_model("openai", "gpt-4o")
-
-    message = UserMessage(
-        text=(
-            "Analyze the following crop status and provide: \n"
-            "1) Numerical risk indices between 0 and 100 for: disease_risk, water_stress, nutrient_deficiency_risk.\n"
-            "2) A concise summary (3-4 sentences) of the overall situation.\n"
-            "3) A prioritized list of actionable tasks for the next 7 days (inspection, treatment, irrigation, fertilization, pruning, etc.).\n\n"
-            "Crop summary by type and status:\n" + plants_summary
-        )
-    )
-
-    ai_response = await chat.send_message(message)
-
-    return {
-        "summary": plants_summary,
         "analysis": ai_response,
     }
 
