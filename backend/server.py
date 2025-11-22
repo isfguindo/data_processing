@@ -1023,6 +1023,11 @@ async def get_plant_diagnoses(plant_id: str, current_user: Dict = Depends(get_cu
     diagnoses = await db.plant_diagnoses.find({"plant_id": plant_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return diagnoses
 
+@api_router.delete("/plants/{plant_id}")
+async def delete_plant(plant_id: str, current_user: Dict = Depends(get_current_user)):
+    await db.plants.delete_one({"id": plant_id})
+    return {"message": "Plant deleted"}
+
 # ==================== STOCK ROUTES ====================
 
 @api_router.get("/stock")
