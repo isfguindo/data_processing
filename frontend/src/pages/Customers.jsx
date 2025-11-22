@@ -99,6 +99,43 @@ const Customers = ({ onLogout }) => {
           <p>{language === 'fr' ? 'Suivi et gestion de la relation clientèle' : 'Tracking and managing customer relationships'}</p>
         </div>
 
+        {/* Filtres IA Clients */}
+        <div style={{
+          marginBottom: '1rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          alignItems: 'center',
+        }}>
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Type de client' : 'Customer type'}</label>
+            <select
+              className="form-input"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Tous les types' : 'All types'}</option>
+              <option value="retailer">{language === 'fr' ? 'Détaillant' : 'Retailer'}</option>
+              <option value="distributor">{language === 'fr' ? 'Distributeur' : 'Distributor'}</option>
+              <option value="direct_consumer">{language === 'fr' ? 'Consommateur Direct' : 'Direct consumer'}</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Période' : 'Period'}</label>
+            <select
+              className="form-input"
+              value={filterPeriod}
+              onChange={(e) => setFilterPeriod(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Toutes les périodes' : 'All periods'}</option>
+              <option value="30d">{language === 'fr' ? '30 derniers jours' : 'Last 30 days'}</option>
+              <option value="90d">{language === 'fr' ? '90 derniers jours' : 'Last 90 days'}</option>
+              <option value="365d">{language === 'fr' ? '12 derniers mois' : 'Last 12 months'}</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => setShowModal(true)} data-testid="add-customer-button">
             <Plus size={20} />
