@@ -325,12 +325,21 @@ async def get_me(current_user: Dict = Depends(get_current_user)):
 
 @api_router.get("/sensors/current")
 async def get_current_sensors(current_user: Dict = Depends(get_current_user)):
-    # Generate and return simulated sensor data
+    """Generate basic simulated readings but also persist them as regular sensor_data entries.
+
+    Les vrais appareils IoT utiliseront plutôt les routes /sensors/devices et /sensors/readings,
+    mais cet endpoint reste utile pour la démo rapide et le rafraîchissement manuel côté UI.
+    """
     sensor_data = generate_sensor_data()
     
     # Save to database
     for sensor in sensor_data:
         sensor_dict = sensor.model_dump()
+        sensor_dict["timestamp"] = sensor_dict["timestamp"].isoformat()
+        await db.sensor_data.insert_one(sensor_dict)
+    
+    return [s.model_dump() for s in sensor_data]
+
 # ==================== SENSOR DEVICES & REAL DATA ROUTES ====================
 
 @api_router.post("/sensors/devices")
