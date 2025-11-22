@@ -21,6 +21,9 @@ const Plants = ({ onLogout }) => {
   const [diagnosis, setDiagnosis] = useState(null);
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPeriod, setFilterPeriod] = useState('all');
   const [newPlant, setNewPlant] = useState({
     name: '',
     plant_type: '',
