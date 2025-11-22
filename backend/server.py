@@ -683,8 +683,6 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
         elif qty <= threshold * 1.2:
             warning_items.append(item)
 
-    language_name = "French" if request.language == "fr" else "English"
-
     # Si aucun problème, message simple sans appel IA
     if not critical_items and not warning_items:
         msg = (
