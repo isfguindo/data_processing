@@ -864,7 +864,7 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
     critical_summary = summarize_items(critical_items)
     warning_summary = summarize_items(warning_items)
 
-    prompt = ""
+    # Construire le prompt avec les données
     if request.language == "fr":
         prompt = (
             "Tu es un assistant IA spécialisé en gestion de stock agricole. "
@@ -873,6 +873,10 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
             "2) Des recommandations concrètes: quels produits réapprovisionner en priorité, "
             "quelles quantités approximatives, et d'éventuelles substitutions. Réponds en Français.\n\n"
         )
+        if critical_items:
+            prompt += f"Articles critiques (stock épuisé ou très bas):\n{critical_summary}\n\n"
+        if warning_items:
+            prompt += f"Articles en pré-alerte:\n{warning_summary}\n\n"
     else:
         prompt = (
             "You are an AI assistant specialized in farm inventory management. "
@@ -881,6 +885,34 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
             "2) Concrete recommendations: which products to restock first, approximate quantities, "
             "and possible substitutions. Respond in English.\n\n"
         )
+        if critical_items:
+            prompt += f"Critical items (out of stock or very low):\n{critical_summary}\n\n"
+        if warning_items:
+            prompt += f"Warning items (approaching threshold):\n{warning_summary}\n\n"
+
+    language_name = "French" if request.language == "fr" else "English"
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"stock-ai-alerts-{uuid.uuid4()}",
+        system_message=(
+            "You are an agricultural inventory management assistant. "
+            "You analyze stock levels and provide concrete restocking recommendations. "
+            f"Always respond in {language_name}."
+        ),
+    ).with_model("openai", "gpt-4o")
+
+    message = UserMessage(text=prompt)
+    ai_response = await chat.send_message(message)
+
+    return {
+        "critical_items": critical_items,
+        "warning_items": warning_items,
+        "summary": f"{len(critical_items)} critical, {len(warning_items)} warning items",
+        "recommendations": ai_response,
+    }
+
+
 class PlantAIRecommendationsRequest(BaseModel):
     language: str = "fr"
     plant_types: Optional[List[str]] = None
