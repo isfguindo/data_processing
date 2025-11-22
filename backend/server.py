@@ -709,9 +709,7 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
     critical_summary = summarize_items(critical_items)
     warning_summary = summarize_items(warning_items)
 
-    prompt = (
-        f"You are an AI assistant specialized in farm inventory management. "
-        f"Analyze the following stock situation and provide:")
+    prompt = ""
     if request.language == "fr":
         prompt = (
             "Tu es un assistant IA spécialisé en gestion de stock agricole. "
