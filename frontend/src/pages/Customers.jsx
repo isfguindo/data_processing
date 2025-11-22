@@ -17,6 +17,9 @@ const Customers = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
+  const [aiTasksPreview, setAiTasksPreview] = useState([]);
+  const [showAiTasksModal, setShowAiTasksModal] = useState(false);
+  const [creatingTasks, setCreatingTasks] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
