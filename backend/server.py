@@ -430,6 +430,7 @@ async def preview_tasks_from_ai(
     Retourne une liste de suggestions de tâches structurées que le frontend peut afficher
     pour validation avant création effective.
     """
+    # language_name not used directly here but kept for potential future prompt tuning
     language_name = "French" if request.language == "fr" else "English"
 
     system_message = (
