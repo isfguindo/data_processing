@@ -183,6 +183,56 @@ const Plants = ({ onLogout }) => {
           <p>{t('plants.subtitle')}</p>
         </div>
 
+        {/* Filtres pour l'analyse IA */}
+        <div style={{
+          marginBottom: '1rem',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+          alignItems: 'center',
+        }}>
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Type de plante' : 'Plant type'}</label>
+            <select
+              className="form-input"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Tous les types' : 'All types'}</option>
+              {[...new Set(plants.map((p) => p.plant_type).filter(Boolean))].map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Statut' : 'Status'}</label>
+            <select
+              className="form-input"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Tous les statuts' : 'All statuses'}</option>
+              <option value="healthy">{language === 'fr' ? 'Saines' : 'Healthy'}</option>
+              <option value="sick">{language === 'fr' ? 'Malades' : 'Sick'}</option>
+              <option value="treated">{language === 'fr' ? 'Traitées' : 'Treated'}</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ minWidth: '180px' }}>
+            <label style={{ fontSize: '0.85rem' }}>{language === 'fr' ? 'Période' : 'Period'}</label>
+            <select
+              className="form-input"
+              value={filterPeriod}
+              onChange={(e) => setFilterPeriod(e.target.value)}
+            >
+              <option value="all">{language === 'fr' ? 'Toutes les dates' : 'All dates'}</option>
+              <option value="30d">{language === 'fr' ? '30 derniers jours' : 'Last 30 days'}</option>
+              <option value="90d">{language === 'fr' ? '90 derniers jours' : 'Last 90 days'}</option>
+            </select>
+          </div>
+        </div>
+
         <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button 
             className="btn btn-primary" 
