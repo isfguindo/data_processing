@@ -418,6 +418,112 @@ class SensorAIAnalysisRequest(BaseModel):
 async def get_sensor_ai_analysis(request: SensorAIAnalysisRequest, current_user: Dict = Depends(get_current_user)):
     """Provide AI-based recommendations and indices based on recent real sensor data."""
     # Fetch recent readings grouped by type
+# ==================== AI TASK GENERATION ROUTES ====================
+
+@api_router.post("/tasks/from-ai/preview")
+async def preview_tasks_from_ai(
+    request: AITaskGenerationRequest,
+    current_user: Dict = Depends(get_current_user),
+):
+    """Transforme un texte de recommandations IA en tâches SANS les enregistrer.
+
+    Retourne une liste de suggestions de tâches structurées que le frontend peut afficher
+    pour validation avant création effective.
+    """
+    language_name = "French" if request.language == "fr" else "English"
+
+    system_message = (
+        "You are an assistant that converts high-level recommendations into concrete tasks "
+        "for a farm management system. You must respond ONLY with valid JSON."
+    )
+
+    chat = LlmChat(
+        api_key=EMERGENT_LLM_KEY,
+        session_id=f"ai-tasks-preview-{uuid.uuid4()}",
+        system_message=system_message,
+    ).with_model("openai", "gpt-4o")
+
+    user_prompt = (
+        f"Source module: {request.source}.\n\n"
+        "Convert the following recommendations into a JSON array of tasks.\n"
+        "Each task must have: title (short), description, priority (low|medium|high), "
+        "and due_in_days (integer, e.g. 3, 7, 14).\n"
+        "Respond ONLY with JSON, no extra text.\n\n"
+        f"Recommendations text:\n{request.ai_text}"
+    )
+
+    message = UserMessage(text=user_prompt)
+    ai_raw = await chat.send_message(message)
+
+    import json
+
+    try:
+        tasks_data = json.loads(ai_raw)
+        if not isinstance(tasks_data, list):
+            raise ValueError("Expected a JSON array")
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="AI could not return a valid task list JSON.",
+        )
+
+    suggestions: List[AITaskSuggestion] = []
+    for item in tasks_data:
+        title = item.get("title")
+        if not title:
+            continue
+        description = item.get("description", "")
+        priority = item.get("priority", "medium")
+        due_in_days = item.get("due_in_days", 7)
+        try:
+            due_in_days = int(due_in_days)
+        except Exception:
+            due_in_days = 7
+
+        if priority not in ("low", "medium", "high"):
+            priority = "medium"
+
+        suggestions.append(
+            AITaskSuggestion(
+                title=title,
+                description=description,
+                priority=priority,
+                due_in_days=due_in_days,
+            )
+        )
+
+    return [s.model_dump() for s in suggestions]
+
+
+@api_router.post("/tasks/from-ai/confirm")
+async def confirm_tasks_from_ai(
+    tasks: List[AITaskSuggestion],
+    current_user: Dict = Depends(get_current_user),
+):
+    """Crée effectivement des tâches à partir de suggestions validées par l'utilisateur."""
+    now = datetime.now(timezone.utc)
+    created_tasks = []
+
+    for suggestion in tasks:
+        due_in_days = max(0, suggestion.due_in_days)
+        due_date = (now + timedelta(days=due_in_days)).date().isoformat()
+
+        task = Task(
+            title=suggestion.title,
+            description=suggestion.description,
+            assigned_to=current_user["user_id"],  # assigné à l'utilisateur courant par défaut
+            priority=suggestion.priority,
+            due_date=due_date,
+        )
+        task_dict = task.model_dump()
+        task_dict["created_at"] = task_dict["created_at"].isoformat()
+        await db.tasks.insert_one(task_dict)
+        task_dict.pop("_id", None)
+        created_tasks.append(task_dict)
+
+    return created_tasks
+
+
     recent_readings = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(50).to_list(50)
 
     if not recent_readings:
