@@ -262,7 +262,17 @@ backend:
           comment: "✅ Existing sensor endpoints still functional. GET /api/sensors/current returns simulated data and persists to sensor_data collection. GET /api/sensors/history with sensor_type parameter works correctly. Both endpoints return data without MongoDB _id fields."
 
 frontend:
-  # Frontend testing not performed as per instructions
+  - task: "Sensors Page UI & AI Analysis Button"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Sensors.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Nouveau bouton d'analyse IA des capteurs ajouté sur la page Sensors, et consommation de /api/sensors/ai-analysis. Tests UI à exécuter."
 
 metadata:
   created_by: "testing_agent"
