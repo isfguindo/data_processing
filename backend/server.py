@@ -728,37 +728,99 @@ async def get_stock_ai_alerts(request: StockAIAlertsRequest, current_user: Dict 
         )
 class PlantAIRecommendationsRequest(BaseModel):
     language: str = "fr"
+    plant_types: Optional[List[str]] = None
+    statuses: Optional[List[str]] = None
+    from_date: Optional[str] = None  # YYYY-MM-DD
+    to_date: Optional[str] = None
 
 
 @api_router.post("/plants/ai-recommendations")
 async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, current_user: Dict = Depends(get_current_user)):
     """Analyse globale des cultures avec estimation de risques et recommandations opérationnelles.
 
-    Retourne une structure textuelle incluant :
-    - Résumé global de l'état des cultures
-    - Estimation de risques chiffrés (0-100) : maladies, stress hydrique, carences nutritives
-    - Liste de recommandations de tâches concrètes
+    Retourne :
+    - summary: résumé texte par type/statut
+    - analysis: texte IA détaillé
+    - indices: dictionnaire de risques chiffrés (0-100)
     """
-    plants = await db.plants.find({}, {"_id": 0}).to_list(1000)
+    # Construire le filtre Mongo en fonction des paramètres
+    query: Dict[str, Any] = {}
+    if request.plant_types:
+        query["plant_type"] = {"$in": request.plant_types}
+    if request.statuses:
+        query["status"] = {"$in": request.statuses}
+    if request.from_date or request.to_date:
+        date_filter: Dict[str, Any] = {}
+        if request.from_date:
+            date_filter["$gte"] = request.from_date
+        if request.to_date:
+            date_filter["$lte"] = request.to_date
+        query["planting_date"] = date_filter
+
+    plants = await db.plants.find(query, {"_id": 0}).to_list(1000)
 
     if not plants:
-        msg = "Aucune plante enregistrée dans le système." if request.language == "fr" else "No plants registered in the system."
-        return {"summary": msg, "analysis": None}
+        msg = "Aucune plante ne correspond aux filtres sélectionnés." if request.language == "fr" else "No plants match the selected filters."
+        return {"summary": msg, "analysis": None, "indices": None}
 
     # Regrouper par type et statut
-    summary_by_type = {}
+    summary_by_type: Dict[str, int] = {}
+    total_plants = len(plants)
+    sick_count = 0
+    treated_count = 0
+
     for p in plants:
         ptype = p.get("plant_type", "unknown")
         status = p.get("status", "unknown")
         key = f"{ptype}|{status}"
         summary_by_type[key] = summary_by_type.get(key, 0) + 1
+        if status == "sick":
+            sick_count += 1
+        if status == "treated":
+            treated_count += 1
 
-    lines = []
+    lines: List[str] = []
     for key, count in summary_by_type.items():
         ptype, status = key.split("|")
         lines.append(f"- {ptype} ({status}): {count} plante(s)")
 
     plants_summary = "\n".join(lines)
+
+    # Calculer des indices simples côté backend
+    disease_risk = 0.0
+    if total_plants > 0:
+        disease_risk = min(100.0, (sick_count + 0.5 * treated_count) / total_plants * 100.0)
+
+    # Essayer de récupérer quelques données capteurs récentes pour estimer le stress hydrique
+    recent_sensors = await db.sensor_data.find({}, {"_id": 0}).sort("timestamp", -1).limit(50).to_list(50)
+    temp_values = [s["value"] for s in recent_sensors if s.get("sensor_type") == "temperature"]
+    soil_humidity_values = [s["value"] for s in recent_sensors if s.get("sensor_type") in ("humidity", "soil_moisture")]
+
+    def avg(values: List[float]) -> Optional[float]:
+        return sum(values) / len(values) if values else None
+
+    avg_temp = avg(temp_values)
+    avg_soil_h = avg(soil_humidity_values)
+
+    # Heuristique très simple : plus chaud et plus sec => stress élevé
+    water_stress = 50.0
+    if avg_temp is not None and avg_soil_h is not None:
+        water_stress = min(100.0, max(0.0, (avg_temp - 20) * 3 + (60 - avg_soil_h)))
+
+    # Nutrient deficiency risk approximé à partir du pH si disponible
+    ph_values = [s["value"] for s in recent_sensors if s.get("sensor_type") == "ph"]
+    avg_ph = avg(ph_values)
+    nutrient_deficiency_risk = 50.0
+    if avg_ph is not None:
+        # pH trop acide ou trop basique => risque plus élevé
+        deviation = abs(avg_ph - 6.5)
+        nutrient_deficiency_risk = min(100.0, deviation * 20)
+
+    indices = {
+        "disease_risk": round(disease_risk, 1),
+        "water_stress": round(water_stress, 1),
+        "nutrient_deficiency_risk": round(nutrient_deficiency_risk, 1),
+    }
 
     language_name = "French" if request.language == "fr" else "English"
 
@@ -773,10 +835,10 @@ async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, 
 
     message = UserMessage(
         text=(
-            "Analyze the following crop status and provide: \n"
-            "1) Numerical risk indices between 0 and 100 for: disease_risk, water_stress, nutrient_deficiency_risk.\n"
-            "2) A concise summary (3-4 sentences) of the overall situation.\n"
-            "3) A prioritized list of actionable tasks for the next 7 days (inspection, treatment, irrigation, fertilization, pruning, etc.).\n\n"
+            "Analyze the following crop status and the provided risk indices, and provide: \n"
+            "1) A concise summary (3-4 sentences) of the overall situation.\n"
+            "2) A prioritized list of actionable tasks for the next 7 days (inspection, treatment, irrigation, fertilization, pruning, etc.).\n"
+            f"Current risk indices (0-100): disease_risk={indices['disease_risk']}, water_stress={indices['water_stress']}, nutrient_deficiency_risk={indices['nutrient_deficiency_risk']}.\n\n"
             "Crop summary by type and status:\n" + plants_summary
         )
     )
@@ -786,6 +848,7 @@ async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, 
     return {
         "summary": plants_summary,
         "analysis": ai_response,
+        "indices": indices,
     }
 
 
