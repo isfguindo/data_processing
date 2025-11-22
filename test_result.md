@@ -261,6 +261,18 @@ backend:
           agent: "testing"
           comment: "✅ Existing sensor endpoints still functional. GET /api/sensors/current returns simulated data and persists to sensor_data collection. GET /api/sensors/history with sensor_type parameter works correctly. Both endpoints return data without MongoDB _id fields."
 
+  - task: "Stock AI Alerts Endpoint"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ POST /api/stock/ai-alerts endpoint working perfectly. Comprehensive testing completed: 1) Empty stock case - correctly returns critical_items=[], warning_items=[], non-empty summary, and recommendations='', 2) Critical/warning items classification - correctly identifies items where quantity <= min_threshold as critical and min_threshold < quantity <= 1.2 * min_threshold as warning, 3) Language support - properly handles both French ('fr') and English ('en') language parameters with appropriate AI responses, 4) No MongoDB serialization errors - all responses properly formatted without _id fields. AI integration with emergentintegrations working correctly for stock management recommendations."
+
 frontend:
   - task: "Sensors Page UI & AI Analysis Button"
     implemented: true
