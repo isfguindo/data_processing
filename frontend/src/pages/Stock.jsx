@@ -43,6 +43,23 @@ const Stock = ({ onLogout }) => {
     }
   };
 
+  const fetchStockAI = async () => {
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/stock/ai-alerts`, { language });
+      setAiAnalysis(response.data);
+      if (response.data.critical_items?.length || response.data.warning_items?.length) {
+        toast.success(language === 'fr' ? 'Analyse IA du stock générée' : 'AI stock analysis generated');
+      } else {
+        toast.success(language === 'fr' ? 'Stock sous contrôle' : 'Stock levels are under control');
+      }
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de l'analyse IA du stock" : 'Error during AI stock analysis');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleAddItem = async (e) => {
     e.preventDefault();
     try {
