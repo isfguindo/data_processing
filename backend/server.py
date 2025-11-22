@@ -854,13 +854,27 @@ async def get_plants_ai_recommendations(request: PlantAIRecommendationsRequest, 
 
 class CustomersAIInsightsRequest(BaseModel):
     language: str = "fr"
+    customer_types: Optional[List[str]] = None
+    since_days: Optional[int] = None
 
 
 @api_router.post("/customers/ai-insights")
 async def get_customers_ai_insights(request: CustomersAIInsightsRequest, current_user: Dict = Depends(get_current_user)):
-    """Analyse IA des clients et des ventes pour générer des insights CRM."""
-    customers = await db.customers.find({}, {"_id": 0}).to_list(1000)
-    sales = await db.sales.find({}, {"_id": 0}).to_list(2000)
+    """Analyse IA des clients et des ventes pour générer des insights CRM, avec filtres optionnels."""
+    # Construire filtre client
+    customer_query: Dict[str, Any] = {}
+    if request.customer_types:
+        customer_query["customer_type"] = {"$in": request.customer_types}
+
+    customers = await db.customers.find(customer_query, {"_id": 0}).to_list(1000)
+
+    # Filtrer les ventes par période si demandé
+    sales_query: Dict[str, Any] = {}
+    if request.since_days is not None and request.since_days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=request.since_days)
+        sales_query["sale_date"] = {"$gte": cutoff.isoformat()}
+
+    sales = await db.sales.find(sales_query, {"_id": 0}).to_list(2000)
 
     if not customers:
         msg = "Aucun client enregistré." if request.language == "fr" else "No customers registered."
