@@ -29,6 +29,19 @@ const Employees = ({ onLogout }) => {
     }
   };
 
+  const fetchEmployeesAI = async () => {
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/employees/ai-insights`, { language });
+      setAiAnalysis(response.data);
+      toast.success(language === 'fr' ? 'Analyse IA du personnel générée' : 'AI staff analysis generated');
+    } catch (error) {
+      toast.error(language === 'fr' ? "Erreur lors de l'analyse IA du personnel" : 'Error during staff AI analysis');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="app-container">
       <Sidebar onLogout={onLogout} />
