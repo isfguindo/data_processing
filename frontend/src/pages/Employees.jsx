@@ -7,8 +7,12 @@ import { toast } from 'sonner';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Employees = ({ onLogout }) => {
+  const { language } = useLanguage();
+
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
