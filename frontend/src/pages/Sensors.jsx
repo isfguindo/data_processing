@@ -50,7 +50,7 @@ const Sensors = ({ onLogout }) => {
           <p>Surveillance environnementale en temps réel</p>
         </div>
 
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button 
             className="btn btn-primary" 
             onClick={fetchSensors} 
@@ -60,7 +60,41 @@ const Sensors = ({ onLogout }) => {
             <RefreshCw size={20} style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }} />
             {refreshing ? 'Actualisation...' : 'Actualiser les données'}
           </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={fetchAIAnalysis}
+            disabled={aiLoading}
+            data-testid="ai-analysis-button"
+          >
+            {aiLoading ? 'Analyse IA en cours...' : 'Analyse IA des capteurs'}
+          </button>
         </div>
+
+        {aiAnalysis && (
+          <div className="content-card" style={{ marginBottom: '2rem' }} data-testid="ai-analysis-panel">
+            <h2>Analyse IA & Recommandations</h2>
+            {aiAnalysis.summary && (
+              <p style={{ whiteSpace: 'pre-line', fontSize: '0.9rem', color: '#81c784' }}>
+                <strong>Résumé des capteurs :</strong>{'\n'}{aiAnalysis.summary}
+              </p>
+            )}
+            {aiAnalysis.analysis && (
+              <div
+                style={{
+                  marginTop: '1rem',
+                  padding: '1rem',
+                  borderRadius: '12px',
+                  background: 'rgba(56, 142, 60, 0.08)',
+                  fontSize: '0.95rem',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {aiAnalysis.analysis}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="sensor-grid">
           {sensors.map((sensor, index) => (
