@@ -654,6 +654,17 @@ async def list_collections(current_user: Dict = Depends(get_current_user)):
 @api_router.get("/admin/db/collection/{name}")
 async def get_collection_docs(name: str, limit: int = 50, current_user: Dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Protection: ne jamais renvoyer de mot de passe
+    projection = {"_id": 0}
+    if name == "users":
+        projection["password_hash"] = 0
+
+    docs = await db[name].find({}, projection).limit(limit).to_list(limit)
+    return docs
+
+
 @api_router.get("/admin/db/stats")
 async def get_db_stats(current_user: Dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
