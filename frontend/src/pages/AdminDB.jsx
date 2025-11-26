@@ -12,6 +12,9 @@ const AdminDB = ({ onLogout }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
+  const [importFile, setImportFile] = useState(null);
+  const [importFormat, setImportFormat] = useState('json');
+  const [importing, setImporting] = useState(false);
 
   const fetchCollections = async () => {
     setLoading(true);
