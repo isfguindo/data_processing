@@ -104,6 +104,27 @@ const AdminDB = ({ onLogout }) => {
                       borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                       cursor: 'pointer',
                       fontSize: '0.9rem',
+            <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+              <h2>{language === 'fr' ? 'Statistiques Globales' : 'Global Statistics'}</h2>
+              {stats ? (
+                <ul style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                  <li>
+                    {language === 'fr' ? 'Nombre de collections :' : 'Total collections:'}{' '}
+                    <strong>{stats.total_collections}</strong>
+                  </li>
+                  <li>
+                    {language === 'fr' ? 'Nombre total de documents :' : 'Total documents:'}{' '}
+                    <strong>{stats.total_documents}</strong>
+                  </li>
+                </ul>
+              ) : (
+                <p style={{ fontSize: '0.85rem', color: '#9e9e9e' }}>
+                  {language === 'fr' ? 'Statistiques non disponibles.' : 'Statistics not available.'}
+                </p>
+              )}
+            </div>
+
+
                     }}
                     onClick={() => fetchCollectionDocs(col.name)}
                   >
