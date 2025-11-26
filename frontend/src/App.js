@@ -182,6 +182,17 @@ function App() {
               <Navigate to="/login" replace />
             )
           }
+        <Route
+          path="/admin-db"
+          element={
+            isAuthenticated ? (
+              <AdminDB onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
