@@ -32,14 +32,11 @@ axios.interceptors.request.use((config) => {
 });
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Initialize authentication state based on localStorage token
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('token');
+  });
   const [loading] = useState(false);
-
-  // Initial auth state is derived from localStorage synchronously
-  const token = localStorage.getItem('token');
-  if (!isAuthenticated && token) {
-    setIsAuthenticated(true);
-  }
 
   const handleLogin = () => {
     setIsAuthenticated(true);
