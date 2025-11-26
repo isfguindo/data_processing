@@ -727,6 +727,62 @@ async def export_collection(name: str, fmt: str = "json", current_user: Dict = D
     return JSONResponse(content=docs, headers=headers)
 
 
+@api_router.post("/admin/db/collection/{name}/import")
+async def import_collection(
+    name: str,
+    fmt: str = "json",
+    file: UploadFile = File(...),
+    current_user: Dict = Depends(get_current_user),
+):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Optional: interdire certaines collections sensibles
+    if name == "users":
+        raise HTTPException(status_code=400, detail="Import not allowed for this collection")
+
+    raw = await file.read()
+    try:
+        text = raw.decode("utf-8")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Unable to decode file as UTF-8")
+
+    docs: List[Dict[str, Any]] = []
+
+    if fmt == "csv":
+        import csv
+        import io
+
+        reader = csv.DictReader(io.StringIO(text))
+        for row in reader:
+            row.pop("_id", None)
+            docs.append(row)
+    else:  # json
+        import json
+
+        try:
+            data = json.loads(text)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid JSON content")
+
+        if isinstance(data, dict):
+            data = [data]
+        if not isinstance(data, list):
+            raise HTTPException(status_code=400, detail="JSON must be an array of objects")
+
+        for item in data:
+            if not isinstance(item, dict):
+                continue
+            item.pop("_id", None)
+            docs.append(item)
+
+    if not docs:
+        return {"imported_count": 0}
+
+    await db[name].insert_many(docs)
+    return {"imported_count": len(docs)}
+
+
 @api_router.delete("/admin/db/collection/{name}/{doc_id}")
 async def delete_doc(name: str, doc_id: str, current_user: Dict = Depends(get_current_user)):
     if current_user.get("role") != "admin":
