@@ -17,6 +17,7 @@ import Employees from './pages/Employees';
 import Tasks from './pages/Tasks';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
+import AdminDB from './pages/AdminDB';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
