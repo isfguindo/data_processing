@@ -618,6 +618,67 @@ async def get_sensor_history(sensor_type: str, limit: int = 100, current_user: D
 
 # ==================== IRRIGATION ROUTES ====================
 
+# ==================== ADMIN DB ROUTES ====================
+
+ADMIN_DELETABLE_COLLECTIONS = {
+    "tasks",
+    "plants",
+    "stock",
+    "customers",
+    "sales",
+    "sensor_data",
+    "sensor_devices",
+    "irrigation",
+    "auto_irrigation_triggers",
+}
+
+
+@api_router.get("/admin/db/collections")
+async def list_collections(current_user: Dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    collection_names = await db.list_collection_names()
+    result = []
+    for name in collection_names:
+        count = await db[name].count_documents({})
+        result.append({
+            "name": name,
+            "count": count,
+            "deletable": name in ADMIN_DELETABLE_COLLECTIONS,
+        })
+    return result
+
+
+@api_router.get("/admin/db/collection/{name}")
+async def get_collection_docs(name: str, limit: int = 50, current_user: Dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # Protection: ne jamais renvoyer de mot de passe
+    projection = {"_id": 0}
+    if name == "users":
+        projection["password_hash"] = 0
+
+    docs = await db[name].find({}, projection).limit(limit).to_list(limit)
+    return docs
+
+
+@api_router.delete("/admin/db/collection/{name}/{doc_id}")
+async def delete_doc(name: str, doc_id: str, current_user: Dict = Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    if name not in ADMIN_DELETABLE_COLLECTIONS:
+        raise HTTPException(status_code=400, detail="Deletion not allowed for this collection")
+
+    result = await db[name].delete_one({"id": doc_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    return {"deleted": True, "id": doc_id}
+
+
 class AIRecommendationRequest(BaseModel):
     language: str = "fr"
 
