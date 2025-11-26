@@ -149,6 +149,77 @@ const AdminDB = ({ onLogout }) => {
               {!loading && documents.length === 0 && (
                 <p style={{ fontSize: '0.9rem', color: '#9e9e9e' }}>
                   {language === 'fr' ? 'Aucun document à afficher.' : 'No documents to display.'}
+              {!loading && selectedCollection && (
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await axios.get(`${API}/admin/db/collection/${selectedCollection}/export`, {
+                          params: { fmt: 'json' },
+                          responseType: 'blob',
+                        });
+                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', `${selectedCollection}.json`);
+                        document.body.appendChild(link);
+                        link.click();
+                        link.parentNode.removeChild(link);
+                      } catch (err) {
+                        setError(language === 'fr' ? "Erreur lors de l'export JSON" : 'Error during JSON export');
+                      }
+                    }}
+                  >
+                    {language === 'fr' ? 'Exporter JSON' : 'Export JSON'}
+                  </button>
+
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const response = await axios.get(`${API}/admin/db/collection/${selectedCollection}/export`, {
+                          params: { fmt: 'csv' },
+                          responseType: 'blob',
+                        });
+                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', `${selectedCollection}.csv`);
+                        document.body.appendChild(link);
+                        link.click();
+                        link.parentNode.removeChild(link);
+                      } catch (err) {
+                        setError(language === 'fr' ? "Erreur lors de l'export CSV" : 'Error during CSV export');
+                      }
+                    }}
+                  >
+                    {language === 'fr' ? 'Exporter CSV' : 'Export CSV'}
+                  </button>
+
+                  {collections.find((c) => c.name === selectedCollection)?.deletable && (
+                    <button
+                      className="btn btn-danger"
+                      type="button"
+                      onClick={async () => {
+                        if (!window.confirm(language === 'fr' ? 'Vider complètement cette collection ?' : 'Clear this entire collection?')) return;
+                        try {
+                          const response = await axios.post(`${API}/admin/db/collection/${selectedCollection}/clear`);
+                          setDocuments([]);
+                          fetchCollections();
+                        } catch (err) {
+                          setError(language === 'fr' ? 'Erreur lors du vidage de la collection' : 'Error clearing collection');
+                        }
+                      }}
+                    >
+                      {language === 'fr' ? 'Vider la collection' : 'Clear collection'}
+                    </button>
+                  )}
+                </div>
+              )}
+
                 </p>
               )}
               {!loading && documents.length > 0 && (
