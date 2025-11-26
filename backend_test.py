@@ -1509,6 +1509,134 @@ class BackendTester:
             except Exception as e:
                 self.log_result(f"MongoDB ID Check {endpoint}", False, f"Request error: {e}")
     
+    def test_dashboard_endpoints(self):
+        """Test specific dashboard endpoints that are causing frontend errors"""
+        print("\n=== Testing Dashboard Endpoints ===")
+        
+        headers = {"Authorization": f"Bearer {self.admin_token}"}
+        
+        # Test 1: GET /api/reports/dashboard
+        try:
+            response = requests.get(f"{BASE_URL}/reports/dashboard", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Dashboard Reports Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                dashboard_data = response.json()
+                
+                # Check expected fields for Dashboard.jsx
+                expected_fields = [
+                    "total_plants", "healthy_plants", "total_stock_items", 
+                    "low_stock_items", "total_sales", "total_revenue", 
+                    "total_customers", "pending_tasks", "recent_sensors"
+                ]
+                
+                missing_fields = [field for field in expected_fields if field not in dashboard_data]
+                
+                if missing_fields:
+                    self.log_result("Dashboard Reports Fields", False, f"Missing expected fields: {missing_fields}", dashboard_data)
+                else:
+                    self.log_result("Dashboard Reports Endpoint", True, f"All expected fields present: {list(dashboard_data.keys())}")
+                    
+                    # Verify recent_sensors is an array
+                    recent_sensors = dashboard_data.get("recent_sensors", [])
+                    if not isinstance(recent_sensors, list):
+                        self.log_result("Dashboard Recent Sensors Type", False, f"Expected array, got {type(recent_sensors)}")
+                    else:
+                        self.log_result("Dashboard Recent Sensors Type", True, f"Recent sensors is array with {len(recent_sensors)} items")
+                
+        except Exception as e:
+            self.log_result("Dashboard Reports Endpoint", False, f"Request error: {e}")
+        
+        # Test 2: GET /api/sales
+        try:
+            response = requests.get(f"{BASE_URL}/sales", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sales Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                sales_data = response.json()
+                
+                if not isinstance(sales_data, list):
+                    self.log_result("Sales Data Type", False, f"Expected array, got {type(sales_data)}")
+                else:
+                    self.log_result("Sales Endpoint", True, f"Sales endpoint returned array with {len(sales_data)} items")
+                    
+                    # Check required fields for Dashboard.jsx (sale_date, total_amount)
+                    if sales_data:
+                        sample_sale = sales_data[0]
+                        required_fields = ["sale_date", "total_amount"]
+                        missing_fields = [field for field in required_fields if field not in sample_sale]
+                        
+                        if missing_fields:
+                            self.log_result("Sales Data Fields", False, f"Missing required fields in sales data: {missing_fields}")
+                        else:
+                            self.log_result("Sales Data Fields", True, "Sales data contains required fields (sale_date, total_amount)")
+                    else:
+                        self.log_result("Sales Data Fields", True, "No sales data to validate (empty array is valid)")
+                
+        except Exception as e:
+            self.log_result("Sales Endpoint", False, f"Request error: {e}")
+        
+        # Test 3: GET /api/sensors/history?sensor_type=temperature&limit=10
+        try:
+            response = requests.get(f"{BASE_URL}/sensors/history?sensor_type=temperature&limit=10", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Sensors History Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                sensors_data = response.json()
+                
+                if not isinstance(sensors_data, list):
+                    self.log_result("Sensors History Data Type", False, f"Expected array, got {type(sensors_data)}")
+                else:
+                    self.log_result("Sensors History Endpoint", True, f"Sensors history returned array with {len(sensors_data)} items")
+                    
+                    # Check required fields (value, sensor_type)
+                    if sensors_data:
+                        sample_sensor = sensors_data[0]
+                        if "value" not in sample_sensor:
+                            self.log_result("Sensors History Value Field", False, "Missing 'value' field in sensor data")
+                        else:
+                            self.log_result("Sensors History Value Field", True, "Sensor data contains 'value' field")
+                        
+                        if "sensor_type" not in sample_sensor:
+                            self.log_result("Sensors History Type Field", False, "Missing 'sensor_type' field in sensor data")
+                        else:
+                            self.log_result("Sensors History Type Field", True, f"Sensor data contains 'sensor_type' field: {sample_sensor['sensor_type']}")
+                    else:
+                        self.log_result("Sensors History Fields", True, "No sensor history data to validate (empty array is valid)")
+                
+        except Exception as e:
+            self.log_result("Sensors History Endpoint", False, f"Request error: {e}")
+        
+        # Test 4: GET /api/stock
+        try:
+            response = requests.get(f"{BASE_URL}/stock", headers=headers)
+            
+            if response.status_code != 200:
+                self.log_result("Stock Endpoint", False, f"HTTP {response.status_code}", response.text)
+            else:
+                stock_data = response.json()
+                
+                if not isinstance(stock_data, list):
+                    self.log_result("Stock Data Type", False, f"Expected array, got {type(stock_data)}")
+                else:
+                    self.log_result("Stock Endpoint", True, f"Stock endpoint returned array with {len(stock_data)} items")
+                    
+                    # Check required fields (category for Dashboard category breakdown)
+                    if stock_data:
+                        sample_stock = stock_data[0]
+                        if "category" not in sample_stock:
+                            self.log_result("Stock Category Field", False, "Missing 'category' field in stock data")
+                        else:
+                            self.log_result("Stock Category Field", True, f"Stock data contains 'category' field: {sample_stock['category']}")
+                    else:
+                        self.log_result("Stock Category Field", True, "No stock data to validate (empty array is valid)")
+                
+        except Exception as e:
+            self.log_result("Stock Endpoint", False, f"Request error: {e}")
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Backend API Tests for New AI Endpoints")
