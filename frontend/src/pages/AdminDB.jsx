@@ -156,8 +156,82 @@ const AdminDB = ({ onLogout }) => {
                 <p style={{ fontSize: '0.9rem', color: '#9e9e9e' }}>
                   {language === 'fr' ? 'Aucun document à afficher.' : 'No documents to display.'}
               {!loading && selectedCollection && (
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <button
+                <>
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ minWidth: '220px' }}>
+                      <label style={{ fontSize: '0.8rem' }}>
+                        {language === 'fr' ? 
+                          'Importer des données (JSON ou CSV)' : 
+                          'Import data (JSON or CSV)'}
+                      </label>
+                      <input
+                        type="file"
+                        accept={importFormat === 'json' ? '.json,application/json' : '.csv,text/csv'}
+                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                        style={{ fontSize: '0.8rem' }}
+                      />
+                    </div>
+                    <div className="form-group" style={{ minWidth: '140px' }}>
+                      <label style={{ fontSize: '0.8rem' }}>{language === 'fr' ? 'Format' : 'Format'}</label>
+                      <select
+                        className="form-input"
+                        value={importFormat}
+                        onChange={(e) => setImportFormat(e.target.value)}
+                      >
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                      </select>
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      disabled={!importFile || importing}
+                      onClick={async () => {
+                        if (!importFile || !selectedCollection) return;
+                        setImporting(true);
+                        try {
+                          const formData = new FormData();
+                          formData.append('file', importFile);
+                          const response = await axios.post(
+                            `${API}/admin/db/collection/${selectedCollection}/import`,
+                            formData,
+                            {
+                              params: { fmt: importFormat },
+                              headers: { 'Content-Type': 'multipart/form-data' },
+                            },
+                          );
+                          const count = response.data?.imported_count ?? 0;
+                          alert(
+                            language === 'fr'
+                              ? `${count} document(s) importé(s).`
+                              : `${count} document(s) imported.`,
+                          );
+                          setImportFile(null);
+                          fetchCollectionDocs(selectedCollection);
+                          fetchCollections();
+                        } catch (err) {
+                          setError(
+                            language === 'fr'
+                              ? "Erreur lors de l'import (format ou contenu invalide)"
+                              : 'Error during import (invalid format or content)',
+                          );
+                        } finally {
+                          setImporting(false);
+                        }
+                      }}
+                    >
+                      {importing
+                        ? language === 'fr'
+                          ? 'Import en cours...'
+                          : 'Importing...'
+                        : language === 'fr'
+                        ? 'Importer'
+                        : 'Import'}
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <button
                     className="btn btn-secondary"
                     type="button"
                     onClick={async () => {
