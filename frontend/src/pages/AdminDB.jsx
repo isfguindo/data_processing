@@ -11,6 +11,7 @@ const AdminDB = ({ onLogout }) => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     fetchCollections();
