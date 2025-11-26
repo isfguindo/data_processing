@@ -155,6 +155,9 @@ const AdminDB = ({ onLogout }) => {
               {!loading && documents.length === 0 && (
                 <p style={{ fontSize: '0.9rem', color: '#9e9e9e' }}>
                   {language === 'fr' ? 'Aucun document à afficher.' : 'No documents to display.'}
+                </p>
+              )}
+
               {!loading && selectedCollection && (
                 <>
                   <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
