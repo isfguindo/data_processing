@@ -15,8 +15,6 @@ const AdminDB = ({ onLogout }) => {
 
   useEffect(() => {
     fetchCollections();
-    fetchStats();
-
   }, []);
 
   const fetchCollections = async () => {
