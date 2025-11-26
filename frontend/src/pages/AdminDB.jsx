@@ -13,10 +13,6 @@ const AdminDB = ({ onLogout }) => {
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
 
-  useEffect(() => {
-    fetchCollections();
-  }, []);
-
   const fetchCollections = async () => {
     setLoading(true);
     setError(null);
@@ -24,8 +20,16 @@ const AdminDB = ({ onLogout }) => {
       const response = await axios.get(`${API}/admin/db/collections`);
       setCollections(response.data);
     } catch (err) {
-      setError(language === 'fr' ? "Accès réservé aux administrateurs ou erreur serveur" : 'Access restricted to admins or server error');
+      setError(
+        language === 'fr'
+          ? "Accès réservé aux administrateurs ou erreur serveur"
+          : 'Access restricted to admins or server error'
+      );
     } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchStats = async () => {
     try {
       const response = await axios.get(`${API}/admin/db/stats`);
@@ -35,10 +39,10 @@ const AdminDB = ({ onLogout }) => {
     }
   };
 
-
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchCollections();
+    fetchStats();
+  }, []);
 
   const fetchCollectionDocs = async (name) => {
     setSelectedCollection(name);
