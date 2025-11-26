@@ -18,6 +18,8 @@ const Sidebar = ({ onLogout }) => {
     { path: '/sales', labelKey: 'nav.sales', icon: DollarSign },
     { path: '/customers', labelKey: 'nav.customers', icon: Users },
     { path: '/employees', labelKey: 'nav.employees', icon: UserCog },
+    { path: '/admin-db', labelKey: 'nav.adminDb', icon: Database },
+
     { path: '/tasks', labelKey: 'nav.tasks', icon: CheckSquare },
     { path: '/reports', labelKey: 'nav.reports', icon: BarChart3 },
     { path: '/settings', labelKey: 'nav.settings', icon: Settings },
