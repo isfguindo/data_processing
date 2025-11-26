@@ -28,6 +28,16 @@ const AdminDB = ({ onLogout }) => {
     } catch (err) {
       setError(language === 'fr' ? "Accès réservé aux administrateurs ou erreur serveur" : 'Access restricted to admins or server error');
     } finally {
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/db/stats`);
+      setStats(response.data);
+    } catch (err) {
+      // stats are optional, no hard error
+    }
+  };
+
+
       setLoading(false);
     }
   };
