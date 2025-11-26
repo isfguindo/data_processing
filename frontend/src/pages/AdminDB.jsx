@@ -303,8 +303,6 @@ const AdminDB = ({ onLogout }) => {
                 </div>
               )}
 
-                </p>
-              )}
               {!loading && documents.length > 0 && (
                 <div style={{ maxHeight: '400px', overflow: 'auto' }}>
                   <table style={{ width: '100%', fontSize: '0.8rem' }}>
