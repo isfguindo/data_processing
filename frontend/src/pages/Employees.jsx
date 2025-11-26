@@ -18,6 +18,9 @@ const Employees = ({ onLogout }) => {
   const [aiTasksPreview, setAiTasksPreview] = useState([]);
   const [showAiTasksModal, setShowAiTasksModal] = useState(false);
   const [creatingTasks, setCreatingTasks] = useState(false);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = user.role === 'admin';
+
 
   useEffect(() => {
     fetchEmployees();
