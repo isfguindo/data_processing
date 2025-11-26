@@ -1639,9 +1639,9 @@ class BackendTester:
 
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting Backend API Tests for New AI Endpoints")
+        print("🚀 Starting Backend API Tests - Focus on Dashboard Endpoints")
         print(f"Base URL: {BASE_URL}")
-        print("Testing: /api/plants/ai-recommendations, /api/customers/ai-insights, /api/employees/ai-insights")
+        print("Testing dashboard endpoints that may be causing frontend errors")
         
         # Setup
         self.setup_test_users()
@@ -1649,6 +1649,10 @@ class BackendTester:
         if not self.authenticate_users():
             print("❌ Authentication failed, cannot continue with tests")
             return False
+        
+        # Run dashboard-specific tests first (as requested)
+        print("\n📊 Testing Dashboard Endpoints")
+        self.test_dashboard_endpoints()
         
         # Run new AI endpoints tests
         print("\n🌱 Testing Plants AI Recommendations Endpoint")
