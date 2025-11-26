@@ -182,6 +182,7 @@ function App() {
               <Navigate to="/login" replace />
             )
           }
+        />
         <Route
           path="/admin-db"
           element={
@@ -191,8 +192,6 @@ function App() {
               <Navigate to="/login" replace />
             )
           }
-        />
-
         />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
