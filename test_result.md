@@ -379,6 +379,21 @@ metadata:
           agent: "testing"
           comment: "✅ POST /api/employees/ai-insights endpoint working perfectly. Comprehensive testing completed: 1) Empty tasks scenario - correctly handles employees with no tasks and provides workload analysis, 2) Employees with task data - properly analyzes workload distribution, task status (pending, in_progress, completed), and generates HR insights, 3) Language support - handles both French ('fr') and English ('en') parameters with appropriate AI responses in correct languages, 4) Response structure - contains required fields {summary: string, analysis: string | null}, 5) No MongoDB serialization errors - all responses properly formatted without _id fields. AI integration with emergentintegrations working correctly for workforce management and task allocation recommendations."
 
+  - task: "Dashboard Endpoints for Frontend Integration"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "user"
+          comment: "Frontend Dashboard showing 'Erreur lors du chargement des données' toast error. Need to test specific endpoints used by Dashboard component."
+        - working: true
+          agent: "testing"
+          comment: "✅ All Dashboard endpoints working correctly. Comprehensive testing completed: 1) GET /api/reports/dashboard - returns HTTP 200 with all expected fields (total_plants, healthy_plants, total_stock_items, low_stock_items, total_sales, total_revenue, total_customers, pending_tasks, recent_sensors), 2) GET /api/sales - returns HTTP 200 with array containing sale_date and total_amount fields as required by Dashboard.jsx, 3) GET /api/sensors/history?sensor_type=temperature&limit=10 - returns HTTP 200 with array containing value and sensor_type fields, 4) GET /api/stock - returns HTTP 200 with array containing category field for stock distribution chart. Root cause identified: Frontend authentication state management issue causing 401 Unauthorized errors. Backend endpoints fully functional. FIXED: Updated App.js authentication initialization and added proper 401 error handling."
+
 test_plan:
   current_focus:
     - "AI Features Frontend Testing - All completed successfully"
